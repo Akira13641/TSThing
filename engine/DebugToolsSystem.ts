@@ -5,8 +5,7 @@
 
 import { WorldManager } from './WorldManager';
 import { logger, LogSource } from './GlobalLogger';
-import { EntityId, Position, Collision, Rectangle, DebugTools } from '../types';
-import { GAME_CONFIG } from '../data/GameData';
+import { EntityId, Position, Collision, DebugTools, Health, Entity } from '../types';
 import { ENEMIES_DATABASE, ITEMS_DATABASE } from '../data/GameData';
 
 /**
@@ -110,9 +109,6 @@ export class DebugToolsSystem {
     showEntityIds: false,
     showPathfinding: false
   };
-
-  /** Debug overlay position */
-  private overlayPosition: DebugOverlayPosition = DebugOverlayPosition.TOP_LEFT;
 
   /** Canvas for debug rendering */
   private debugCanvas: HTMLCanvasElement | null = null;
@@ -235,7 +231,6 @@ export class DebugToolsSystem {
    * @param position - New overlay position
    */
   public setOverlayPosition(position: DebugOverlayPosition): void {
-    this.overlayPosition = position;
     this.updateDebugElements();
   }
 
@@ -576,6 +571,7 @@ export class DebugToolsSystem {
     if (!this.debugContext || !this.world) return;
 
     const ctx = this.debugContext;
+    if (!this.debugCanvas) return;
     ctx.clearRect(0, 0, this.debugCanvas.width, this.debugCanvas.height);
 
     // Render grid overlay
@@ -595,12 +591,12 @@ export class DebugToolsSystem {
 
     // Render collision debug
     if (this.config.showCollisionDebug) {
-      this.renderCollisionDebug(ctx);
+      this.renderCollisionDebug();
     }
 
     // Render pathfinding
     if (this.config.showPathfinding) {
-      this.renderPathfinding(ctx);
+      this.renderPathfinding();
     }
   }
 
@@ -652,11 +648,12 @@ export class DebugToolsSystem {
    * @param ctx - Canvas context
    */
   private renderHitboxes(ctx: CanvasRenderingContext2D): void {
+    if (!this.world) return;
     const entities = this.world.query(['Position', 'Collision']);
     
-    entities.forEach(entity => {
-      const position = this.world!.getComponent<Position>(entity.id, 'Position');
-      const collision = this.world!.getComponent<Collision>(entity.id, 'Collision');
+    entities.forEach(entityId => {
+      const position = this.world.getComponent<Position>(entityId, 'Position');
+      const collision = this.world.getComponent<Collision>(entityId, 'Collision');
       
       if (!position || !collision) return;
 
@@ -682,16 +679,17 @@ export class DebugToolsSystem {
    * @param ctx - Canvas context
    */
   private renderEntityIds(ctx: CanvasRenderingContext2D): void {
+    if (!this.world) return;
     const entities = this.world.query(['Position']);
     
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.font = '12px monospace';
     
-    entities.forEach(entity => {
-      const position = this.world!.getComponent<Position>(entity.id, 'Position');
-      if (!position) return;
-
-      ctx.fillText(`ID: ${entity.id}`, position.x + 10, position.y - 10);
+    entities.forEach(entityId => {
+      const position = this.world.getComponent<Position>(entityId, 'Position');
+      if (position) {
+        ctx.fillText(`ID: ${entityId}`, position.x + 10, position.y - 10);
+      }
     });
   }
 
@@ -699,16 +697,15 @@ export class DebugToolsSystem {
    * Renders collision debug information
    * @param ctx - Canvas context
    */
-  private renderCollisionDebug(ctx: CanvasRenderingContext2D): void {
+  private renderCollisionDebug(): void {
     // This would render collision normals, contact points, etc.
     // Implementation depends on the physics system
   }
 
   /**
    * Renders pathfinding visualization
-   * @param ctx - Canvas context
    */
-  private renderPathfinding(ctx: CanvasRenderingContext2D): void {
+  private renderPathfinding(): void {
     // This would render pathfinding nodes and paths
     // Implementation depends on the pathfinding system
   }
@@ -803,7 +800,6 @@ export class DebugToolsSystem {
   private spawnItem(itemId: string, x: number, y: number): EntityId {
     if (!this.world) throw new Error('World not set');
     
-    const item = ITEMS_DATABASE[itemId];
     const entityId = this.world.createEntity(['Position', 'Collision', 'Sprite']);
     
     this.world.addComponent(entityId, 'Position', { x, y });
@@ -934,14 +930,16 @@ export class DebugToolsSystem {
     
     const entitiesToRemove: EntityId[] = [];
     
-    this.world.entities.forEach((entity, entityId) => {
+    this.world.entities.forEach((_entity: Entity, entityId: EntityId) => {
       if (entityId !== this.playerId) {
         entitiesToRemove.push(entityId);
       }
     });
     
     entitiesToRemove.forEach(entityId => {
-      this.world!.destroyEntity(entityId);
+      if (this.world) {
+        this.world.destroyEntity(entityId);
+      }
     });
     
     logger.info(LogSource.CORE, `Cleared ${entitiesToRemove.length} entities`);

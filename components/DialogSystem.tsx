@@ -179,11 +179,10 @@ function parseDialogTokens(dialogText: string): DialogToken[] {
 const DialogBox: React.FC<{
   state: DialogState;
   config: DialogConfig;
-  onAdvance: () => void;
   onSelectChoice: (choiceIndex: number) => void;
-}> = memo(({ state, config, onAdvance, onSelectChoice }) => {
+}> = memo(({ state, config, onSelectChoice }) => {
   const [isShaking, setIsShaking] = useState(false);
-  const shakeTimeoutRef = useRef<NodeJS.Timeout>();
+  const shakeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle shake effect
   useEffect(() => {
@@ -264,7 +263,7 @@ const DialogBox: React.FC<{
 
   return (
     <>
-      <style jsx>{`
+      <style>{`
         @keyframes shake {
           0%, 100% { transform: translateX(-50%) translateY(0); }
           25% { transform: translateX(-48%) translateY(-2px); }
@@ -350,8 +349,7 @@ export const DialogSystem: React.FC = memo(() => {
     characterSound: 'text_blip'
   });
 
-  const typewriterIntervalRef = useRef<NodeJS.Timeout>();
-  const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout>();
+  const typewriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Parse speaker from text (format: "Speaker: Message")
   const parseSpeaker = useCallback((fullText: string): { speaker: string; message: string } => {
@@ -510,7 +508,7 @@ export const DialogSystem: React.FC = memo(() => {
     if (!visible || dialogState.complete || dialogState.waiting) {
       if (typewriterIntervalRef.current) {
         clearInterval(typewriterIntervalRef.current);
-        typewriterIntervalRef.current = undefined;
+        typewriterIntervalRef.current = null;
       }
       return;
     }
@@ -541,7 +539,7 @@ export const DialogSystem: React.FC = memo(() => {
     return () => {
       if (typewriterIntervalRef.current) {
         clearInterval(typewriterIntervalRef.current);
-        typewriterIntervalRef.current = undefined;
+        typewriterIntervalRef.current = null;
       }
     };
   }, [visible, dialogState, processTokens]);
@@ -638,7 +636,6 @@ export const DialogSystem: React.FC = memo(() => {
     <DialogBox
       state={dialogState}
       config={config}
-      onAdvance={handleAdvance}
       onSelectChoice={handleSelectChoice}
     />
   );

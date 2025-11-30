@@ -175,12 +175,14 @@ export const useUIStore = create<UIState & UIActions>()(
  * @returns Menu visibility states
  */
 export const useMenuVisibility = () => {
-  return useUIStore(state => ({
+  const state = useUIStore();
+  return {
     mainMenuVisible: state.mainMenuVisible,
     pauseMenuVisible: state.pauseMenuVisible,
     inventoryVisible: state.inventoryVisible,
-    battleMenuVisible: state.battleMenuVisible
-  }));
+    battleMenuVisible: state.battleMenuVisible,
+    setMainMenuVisible: state.setMainMenuVisible
+  };
 };
 
 /**

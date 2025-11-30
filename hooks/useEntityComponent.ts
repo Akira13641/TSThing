@@ -3,7 +3,7 @@
  * @fileoverview Provides React integration for ECS component subscription
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { EntityId, ComponentType } from '../types';
 import { useGameEngine } from './useGameEngine';
 
@@ -53,7 +53,7 @@ export function useEntityComponent<T>(
 export function useEntityComponents<T extends Record<string, ComponentType>>(
   entityId: EntityId | null,
   componentTypes: T
-): { [K in keyof T]: T[K] extends ComponentType ? infer U : never } | null {
+): { [K in keyof T]: T[K] extends ComponentType ? unknown : never } | null {
   const { getComponent, subscribeToComponent } = useGameEngine();
   const [componentsData, setComponentsData] = useState<Record<string, unknown> | null>(() => {
     if (!entityId) return null;
@@ -96,7 +96,7 @@ export function useEntityComponents<T extends Record<string, ComponentType>>(
     };
   }, [entityId, componentTypes, getComponent, subscribeToComponent]);
 
-  return componentsData as { [K in keyof T]: T[K] extends ComponentType ? infer U : never } | null;
+  return componentsData as { [K in keyof T]: T[K] extends ComponentType ? unknown : never } | null;
 }
 
 /**

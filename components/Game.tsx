@@ -9,13 +9,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { WorldManager } from '../engine/WorldManager';
 import { logger, LogSource } from '../engine/GlobalLogger';
-import { EntityId, Position, Velocity, Health, Sprite, CombatStats } from '../types';
-import { ErrorBoundary, GameEngineErrorBoundary } from './ErrorBoundary';
+import { EntityId, Position, Velocity } from '../types';
+import { GameEngineErrorBoundary } from './ErrorBoundary';
 import { HUD } from './HUD';
 import { DialogSystem } from './DialogSystem';
 import { MenuSystem } from './MenuSystem';
 import { InventorySystem } from './InventorySystem';
-import { CombatUI } from './CombatUI';
 import { CombatSystem } from '../engine/CombatSystem';
 import { useUIStore } from '../store';
 
@@ -40,11 +39,10 @@ export const Game: React.FC<GameProps> = ({
   height = 768, 
   showDebug = false 
 }) => {
-  const [playerEntityId] = useState<EntityId | null>(null);
-  const [showLogger, setShowLogger] = useState(false);
+  const [playerEntityId, setPlayerEntityId] = useState<EntityId | null>(null);
   const [debugMode, setDebugMode] = useState(showDebug);
-  const [combatSystem] = useState<CombatSystem | null>(null);
-  const [inCombat, setInCombat] = useState(false);
+  const [combatSystem, setCombatSystem] = useState<CombatSystem | null>(null);
+  const [inCombat] = useState(false);
   
   // UI state
   const { 
@@ -207,10 +205,6 @@ export const Game: React.FC<GameProps> = ({
           e.preventDefault();
           setDebugMode(prev => !prev);
           break;
-        case 'l':
-          e.preventDefault();
-          setShowLogger(prev => !prev);
-          break;
       }
 
       if (velocity.dx !== 0 || velocity.dy !== 0) {
@@ -258,98 +252,6 @@ export const Game: React.FC<GameProps> = ({
       startGame();
     }
   }, [engineState.initialized, engineState.running, initializeGame, startGame]);
-
-  // Logger overlay state - moved outside conditional
-  const [logs, setLogs] = useState<Array<{timestamp: number, level: string, source: string, message: string}>>([]);
-
-  useEffect(() => {
-    // This would integrate with the GlobalLogger
-    // For now, we'll show a placeholder
-    setLogs([
-      { timestamp: Date.now(), level: 'INFO', source: 'CORE', message: 'Game started' },
-      { timestamp: Date.now(), level: 'DEBUG', source: 'RENDERER', message: 'Texture loaded' },
-    ]);
-  }, []);
-
-  // Debug overlay component
-  const DebugOverlay: React.FC = () => {
-    if (!debugMode) return null;
-
-    return (
-      <div style={{
-        position: 'absolute',
-        top: 10,
-        left: 10,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: '10px',
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        zIndex: 1000
-      }}>
-        <div>FPS: {engineState.fps}</div>
-        <div>Entities: {engineState.stats.entityCount}</div>
-        <div>Components: {engineState.stats.componentCount}</div>
-        <div>Systems: {engineState.stats.systemCount}</div>
-        <div>Textures: {engineState.stats.textureCount}</div>
-        <div>Running: {engineState.running ? 'Yes' : 'No'}</div>
-        <button 
-          onClick={() => setShowLogger(!showLogger)}
-          style={{ marginTop: '10px', padding: '5px' }}
-        >
-          {showLogger ? 'Hide' : 'Show'} Logger
-        </button>
-      </div>
-    );
-  };
-
-  // Logger overlay component
-  const LoggerOverlay: React.FC = () => {
-    if (!showLogger) return null;
-
-    return (
-      <div style={{
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        width: '400px',
-        height: '300px',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        color: 'white',
-        padding: '10px',
-        fontFamily: 'monospace',
-        fontSize: '10px',
-        zIndex: 1000,
-        overflowY: 'auto'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <h4 style={{ margin: 0 }}>Logger</h4>
-          <button onClick={() => setShowLogger(false)} style={{ background: 'none', border: '1px solid white', color: 'white' }}>×</button>
-        </div>
-        {logs.map((log, index) => (
-          <div key={index} style={{ marginBottom: '2px' }}>
-            <span style={{ color: '#888' }}>
-              {new Date(log.timestamp).toLocaleTimeString()}
-            </span>
-            {' '}
-            <span style={{ 
-              color: log.level === 'ERROR' ? '#ff6b6b' : 
-                     log.level === 'WARN' ? '#ffd93d' : 
-                     log.level === 'INFO' ? '#6bcf7f' : '#888' 
-            }}>
-              [{log.level}]
-            </span>
-            {' '}
-            <span style={{ color: '#4a90e2' }}>
-              {log.source}
-            </span>
-            {' '}
-            {log.message}
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <GameEngineErrorBoundary>

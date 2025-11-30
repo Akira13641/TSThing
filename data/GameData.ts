@@ -3,8 +3,8 @@
  * @fileoverview Comprehensive game data definitions for items, enemies, skills, and content
  */
 
-import { ItemDef, EnemyDef, AnimationDef } from '../types';
-import { HERO_ANIMATIONS, HEROINE_ANIMATIONS, SLIME_ANIMATIONS } from '../assets/SpriteAssets';
+import { ItemDef, EnemyDef } from '../types';
+import { HERO_ANIMATIONS, SLIME_ANIMATIONS } from '../assets/SpriteAssets';
 
 /**
  * Item definitions database
@@ -98,7 +98,7 @@ export const ITEMS_DATABASE: Record<string, ItemDef> = {
       stackable: true,
       consumable: true,
       effects: [
-        { type: 'buff_attack', value: 10, duration: 300 }
+        { type: 'buff_attack', value: 10 }
       ]
     }
   },
@@ -113,7 +113,7 @@ export const ITEMS_DATABASE: Record<string, ItemDef> = {
       stackable: true,
       consumable: true,
       effects: [
-        { type: 'buff_defense', value: 8, duration: 300 }
+        { type: 'buff_defense', value: 8 }
       ]
     }
   },
@@ -433,7 +433,7 @@ export const ITEMS_DATABASE: Record<string, ItemDef> = {
       stackable: true,
       consumable: true,
       effects: [
-        { type: 'light', value: 5, duration: 300 }
+        { type: 'light', value: 5 }
       ]
     }
   },

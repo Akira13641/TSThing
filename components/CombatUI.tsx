@@ -7,15 +7,13 @@
 
 import React, { memo, useEffect, useState, useCallback } from 'react';
 import { useUIStore } from '../store';
-import { logger, LogSource } from '../engine/GlobalLogger';
 import { CombatSystem, CombatState, CombatAction } from '../engine/CombatSystem';
-import { EntityId, Health, CombatStats } from '../types';
+import { Health, CombatStats } from '../types';
 
 /**
  * Combat participant display component
  */
 const CombatParticipant: React.FC<{
-  entityId: EntityId;
   name: string;
   health: Health;
   combatState: CombatStats;
@@ -23,7 +21,6 @@ const CombatParticipant: React.FC<{
   isCurrentTurn: boolean;
   isDefeated: boolean;
 }> = memo(({ 
-  entityId, 
   name, 
   health, 
   combatState, 
@@ -460,7 +457,6 @@ export const CombatUI: React.FC<{
           {participants.map(participant => (
             <CombatParticipant
               key={participant.entityId}
-              entityId={participant.entityId}
               name={participant.isPlayer ? 'Hero' : 'Monster'}
               health={participant.health || { current: 0, max: 1 }}
               combatState={participant.combatStats || { attacking: false, attack: 0, defense: 0, actionPoints: 3, maxActionPoints: 3 }}

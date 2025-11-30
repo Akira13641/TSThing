@@ -6,7 +6,6 @@
 import { WorldManager } from './WorldManager';
 import { logger, LogSource } from './GlobalLogger';
 import { EntityId, Position, Health, CombatStats, Animation, Sprite } from '../types';
-import { GAME_CONFIG } from '../data/GameData';
 
 /**
  * Combat state enumeration
@@ -167,18 +166,20 @@ export class CombatSystem {
 
     // Add enemy participants
     enemyEntityIds.forEach((enemyId, index) => {
-      const position = this.world.getComponent<Position>(enemyId, 'Position');
-      if (position) {
-        this.participants.set(enemyId, {
-          entityId: enemyId,
-          isPlayer: false,
-          originalPosition: { ...position },
-          turnOrder: index + 1,
-          defeated: false,
-          lastAction: null,
-          health: this.world.getComponent<Health>(enemyId, 'Health') || undefined,
-          combatStats: this.world.getComponent<CombatStats>(enemyId, 'CombatStats') || undefined
-        });
+      if (this.world) {
+        const position = this.world.getComponent<Position>(enemyId, 'Position');
+        if (position) {
+          this.participants.set(enemyId, {
+            entityId: enemyId,
+            isPlayer: false,
+            originalPosition: { ...position },
+            turnOrder: index + 1,
+            defeated: false,
+            lastAction: null,
+            health: this.world.getComponent<Health>(enemyId, 'Health') || undefined,
+            combatStats: this.world.getComponent<CombatStats>(enemyId, 'CombatStats') || undefined
+          });
+        }
       }
     });
 

@@ -374,10 +374,8 @@ const DebugInfo: React.FC<{
       <div>Entities: {entityCount}</div>
       <div>Player ID: {entityId || 'None'}</div>
       
-      {debugData.memory && (
-        <>
-          <div>Memory: {debugData.memory.used}MB / {debugData.memory.total}MB</div>
-        </>
+      {debugData.memory && typeof debugData.memory === 'object' && 'used' in debugData.memory && 'total' in debugData.memory && (
+        <div>Memory: {Number((debugData.memory as any).used)}MB / {Number((debugData.memory as any).total)}MB</div>
       )}
       
       <div>Time: {new Date().toLocaleTimeString()}</div>

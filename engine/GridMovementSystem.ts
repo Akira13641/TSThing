@@ -4,7 +4,7 @@
  */
 
 import { WorldManager } from './WorldManager';
-import { EntityId, Position, Velocity, Collision, Tile, GameMap, Rectangle } from '../types';
+import { EntityId, Position, Collision, Tile, GameMap, Rectangle } from '../types';
 import { logger, LogSource } from './GlobalLogger';
 
 /**
@@ -184,7 +184,7 @@ export class GridMovementSystem {
 
     if (!position) {
       logger.warn(LogSource.PHYSICS, `Entity ${entityId} has no Position component`);
-      return { success: false, newPosition: position, reason: 'collision' };
+      return { success: false, newPosition: { x: 0, y: 0 }, reason: 'collision' };
     }
 
     // Calculate target position

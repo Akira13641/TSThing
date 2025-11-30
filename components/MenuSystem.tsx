@@ -6,7 +6,7 @@
  */
 
 import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
-import { useMenuVisibility, useUIStore } from '../store';
+import { useMenuVisibility } from '../store';
 import { logger, LogSource } from '../engine/GlobalLogger';
 
 /**
@@ -145,10 +145,9 @@ const DEFAULT_MENU_STRUCTURE: MenuItem[] = [
 const MenuItemComponent: React.FC<{
   item: MenuItem;
   isSelected: boolean;
-  index: number;
   showShortcut?: boolean;
   onSelect: () => void;
-}> = memo(({ item, isSelected, index, showShortcut, onSelect }) => {
+}> = memo(({ item, isSelected, showShortcut, onSelect }) => {
   const itemStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -226,7 +225,7 @@ const MenuContainer: React.FC<{
   items: MenuItem[];
   selectedIndex: number;
   onSelectionChange: (index: number) => void;
-  onItemSelect: (item: MenuItem, index: number) => void;
+  onItemSelect: (item: MenuItem) => void;
   onBack: () => void;
   config: MenuConfig;
   depth: number;
@@ -273,7 +272,7 @@ const MenuContainer: React.FC<{
       case 'x':
         e.preventDefault();
         const selectedItem = items[selectedIndex];
-        onItemSelect(selectedItem, selectedIndex);
+        onItemSelect(selectedItem);
         break;
 
       case 'Escape':
@@ -354,9 +353,8 @@ const MenuContainer: React.FC<{
             key={item.id}
             item={item}
             isSelected={index === selectedIndex}
-            index={index}
             showShortcut={config.showShortcuts && depth === 0}
-            onSelect={() => onItemSelect(item, index)}
+            onSelect={() => onItemSelect(item)}
           />
         ))}
       </div>
@@ -410,7 +408,7 @@ export const MenuSystem: React.FC = memo(() => {
   }, [config.navigationSound]);
 
   // Handle item selection
-  const handleItemSelect = useCallback((item: MenuItem, index: number) => {
+  const handleItemSelect = useCallback((item: MenuItem) => {
     logger.debug(LogSource.UI, `Selected menu item: ${item.text} (${item.id})`);
 
     // Play selection sound
@@ -425,7 +423,7 @@ export const MenuSystem: React.FC = memo(() => {
         depth: prev.depth + 1,
         selectedIndices: [...prev.selectedIndices, 0],
         currentItems: item.submenu!,
-        menuHistory: [...prev.menuHistory, item],
+        menuHistory: [...prev.menuHistory, [item]],
         transitioning: true
       }));
 
@@ -477,7 +475,7 @@ export const MenuSystem: React.FC = memo(() => {
         ...prev,
         depth: prev.depth - 1,
         selectedIndices: prev.selectedIndices.slice(0, -1),
-        currentItems: prev.menuHistory[prev.menuHistory.length - 1]?.submenu || DEFAULT_MENU_STRUCTURE,
+        currentItems: prev.menuHistory[prev.menuHistory.length - 1]?.[0]?.submenu || DEFAULT_MENU_STRUCTURE,
         menuHistory: prev.menuHistory.slice(0, -1),
         transitioning: true
       }));
@@ -540,7 +538,7 @@ export const MenuSystem: React.FC = memo(() => {
   const getCurrentMenuTitle = () => {
     if (menuState.depth === 0) return 'Main Menu';
     const parentItem = menuState.menuHistory[menuState.depth - 1];
-    return parentItem ? parentItem.text : 'Menu';
+    return parentItem ? parentItem[0]?.text : 'Menu';
   };
 
   return (

@@ -157,7 +157,7 @@ export class AccessibilitySystem {
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
     
-    this.tts.speak(utterance);
+    this.tts.speak(utterance as any);
     
     logger.debug(LogSource.UI, `TTS: "${text}"`);
   }

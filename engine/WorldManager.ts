@@ -416,6 +416,22 @@ export class WorldManager {
   }
 
   /**
+   * Gets the entities map (for debugging purposes)
+   * @returns The entities map
+   */
+  public get entities(): Map<EntityId, Entity> {
+    return this.world.entities;
+  }
+
+  /**
+   * Gets the components map (for debugging purposes)
+   * @returns The components map
+   */
+  public get components(): Map<ComponentType, Map<EntityId, unknown>> {
+    return this.world.components;
+  }
+
+  /**
    * Gets statistics about the world
    * @returns World statistics object
    */

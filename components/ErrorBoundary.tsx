@@ -232,7 +232,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
    * @param error - The error that was thrown
    * @param errorInfo - Additional error information from React
    */
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log to our global logger
     logger.error(
       LogSource.UI, 
@@ -286,7 +286,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
    * Renders the component
    * @returns Error fallback UI if error occurred, otherwise children
    */
-  render(): ReactNode {
+  override render(): ReactNode {
     if (this.state.hasError) {
       // If custom fallback is provided, use it
       if (this.props.fallback) {

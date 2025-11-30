@@ -5,8 +5,7 @@
 
 import { WorldManager } from './WorldManager';
 import { logger, LogSource } from './GlobalLogger';
-import { EntityId, Position, Collision, Rectangle } from '../types';
-import { GAME_CONFIG } from '../data/GameData';
+import { EntityId, Position, Health } from '../types';
 
 /**
  * Interaction types
@@ -375,11 +374,11 @@ export class InteractionSystem {
     // Find all entities with Interaction components
     const interactiveEntities = this.world.query(['Interaction']);
     
-    for (const entity of interactiveEntities) {
-      if (entity.id === this.playerId) continue; // Skip self
+    for (const entityId of interactiveEntities) {
+      if (entityId === this.playerId) continue; // Skip self
 
-      const interaction = this.world.getComponent<Interaction>(entity.id, 'Interaction');
-      const entityPosition = this.world.getComponent<Position>(entity.id, 'Position');
+      const interaction = this.world.getComponent<Interaction>(entityId, 'Interaction');
+      const entityPosition = this.world.getComponent<Position>(entityId, 'Position');
       
       if (!interaction || !entityPosition) continue;
       
@@ -394,11 +393,11 @@ export class InteractionSystem {
       if (distance > effectiveRange) continue;
       
       // Check conditions
-      if (!this.checkInteractionConditions(interaction, this.playerId, entity.id)) continue;
+      if (!this.checkInteractionConditions(interaction, this.playerId, entityId)) continue;
       
       // Add to available interactions
       this.availableInteractions.push({
-        entityId: entity.id,
+        entityId: entityId,
         interaction,
         distance,
         priority: this.calculateInteractionPriority(interaction)
@@ -550,7 +549,7 @@ export class InteractionSystem {
    * Processes active interaction
    * @param deltaTime - Time since last frame in seconds
    */
-  private processActiveInteraction(deltaTime: number): void {
+  private processActiveInteraction(_deltaTime: number): void {
     // This would handle ongoing interactions (like dialog choices)
     // For now, just clear the interaction after actions are executed
     setTimeout(() => {

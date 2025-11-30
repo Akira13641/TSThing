@@ -6,8 +6,6 @@
 import { WorldManager } from './WorldManager';
 import { logger, LogSource } from './GlobalLogger';
 import { EntityId, Position, Camera, Rectangle } from '../types';
-import { GAME_CONFIG } from '../data/GameData';
-import { vec2 } from 'gl-matrix';
 
 /**
  * Camera follow modes
@@ -295,6 +293,7 @@ export class CameraSystem {
    */
   public isVisible(worldX: number, worldY: number, margin: number = 0): boolean {
     const screen = this.worldToScreen(worldX, worldY);
+    if (!screen || !this.viewport) return false;
     const extendedMargin = margin / this.camera.zoom;
     
     return screen.x >= -extendedMargin && 
@@ -451,7 +450,6 @@ export class CameraSystem {
       case CameraFollowMode.ELASTIC:
         // Spring physics
         const springConstant = this.followSpeed * 2;
-        const damping = 0.7;
         
         const springForceX = (targetX - this.camera.x) * springConstant;
         const springForceY = (targetY - this.camera.y) * springConstant;

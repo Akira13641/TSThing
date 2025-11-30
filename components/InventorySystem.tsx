@@ -138,7 +138,7 @@ const MOCK_ITEMS: Record<string, ItemDef> = {
       value: 200,
       stackable: true,
       consumable: true,
-      effects: [{ type: 'buff_attack', value: 10, duration: 300 }]
+      effects: [{ type: 'buff_attack', value: 10 }]
     }
   }
 };
@@ -167,8 +167,7 @@ const InventorySlot: React.FC<{
   onUse: () => void;
   onEquip: () => void;
   onDrop: () => void;
-  config: InventoryConfig;
-}> = memo(({ slot, item, onSelect, onUse, onEquip, onDrop, config }) => {
+}> = memo(({ slot, item, onSelect, onUse, onEquip, onDrop }) => {
   const [showContextMenu, setShowContextMenu] = useState(false);
 
   const slotStyle: React.CSSProperties = {
@@ -505,7 +504,6 @@ export const InventorySystem: React.FC = memo(() => {
     
     for (let i = 0; i < config.slotCount; i++) {
       const inventoryItem = MOCK_INVENTORY[i];
-      const item = inventoryItem ? MOCK_ITEMS[inventoryItem.itemId] : null;
       
       slots.push({
         itemId: inventoryItem?.itemId || null,
@@ -730,7 +728,6 @@ export const InventorySystem: React.FC = memo(() => {
               onUse={handleItemUse}
               onEquip={handleItemEquip}
               onDrop={handleItemDrop}
-              config={config}
             />
           ))}
         </div>
