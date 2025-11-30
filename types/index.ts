@@ -394,3 +394,57 @@ export interface EnemyDef {
     detectionRange: number;
   };
 }
+
+/**
+ * Accessibility options structure
+ */
+export interface AccessibilityOptions {
+  /** High contrast mode */
+  highContrast: boolean;
+  /** Large text mode */
+  largeText: boolean;
+  /** Color blind mode */
+  colorBlindMode: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia';
+  /** Screen reader enabled */
+  screenReader: boolean;
+  /** Reduced motion */
+  reducedMotion: boolean;
+  /** Visual indicators for audio cues */
+  audioVisualIndicators: boolean;
+  /** Auto-save frequency */
+  autoSaveFrequency: number;
+  /** Text-to-speech speed */
+  textToSpeechSpeed: number;
+  /** Subtitle size */
+  subtitleSize: 'small' | 'medium' | 'large';
+  /** Input assistance */
+  inputAssistance: {
+    buttonHolding: boolean;
+    rapidFire: boolean;
+    stickSensitivity: number;
+  };
+}
+
+/**
+ * Debug tool configuration
+ */
+export interface DebugTools {
+  /** Hitbox visualization */
+  showHitboxes: boolean;
+  /** State inspector */
+  showStateInspector: boolean;
+  /** Entity spawner */
+  showEntitySpawner: boolean;
+  /** Warp functionality */
+  showWarpMenu: boolean;
+  /** Performance metrics */
+  showPerformanceMetrics: boolean;
+  /** Collision debugging */
+  showCollisionDebug: boolean;
+  /** Grid overlay */
+  showGridOverlay: boolean;
+  /** Entity IDs */
+  showEntityIds: boolean;
+  /** Pathfinding visualization */
+  showPathfinding: boolean;
+}

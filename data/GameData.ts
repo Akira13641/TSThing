@@ -770,6 +770,7 @@ export const GAME_CONFIG = {
   
   // Save system
   MAX_SAVE_SLOTS: 10,
+  AUTOSAVE_SLOT: 10, // Use slot 10 for auto-save
   AUTOSAVE_INTERVAL: 300, // Seconds
   
   // Difficulty modifiers

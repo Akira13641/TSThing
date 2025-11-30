@@ -58,10 +58,10 @@
 ## Game State and Scene Management
 - [x] Scene enum definitions
 - [x] UI state management (Zustand store)
-- [ ] State transition system
-- [ ] Save/load functionality
-- [ ] Persistence layer
-- [ ] Versioning and migration
+- [x] State transition system
+- [x] Save/load functionality
+- [x] Persistence layer
+- [x] Versioning and migration
 
 ## UI Components (React)
 - [x] React hooks for canvas resize and keyboard input
@@ -70,9 +70,9 @@
 - [x] Dialog system
 - [x] Menu system
 - [x] Inventory screen
-- [ ] Battle UI
+- [x] Battle UI
 - [x] Error boundaries
-- [ ] Accessibility features
+- [x] Accessibility features
 
 ## Game Mechanics
 - [x] Math utilities for game calculations
@@ -80,17 +80,17 @@
 - [x] Validation utilities for game data
 - [x] Grid-based movement
 - [x] Collision detection
-- [ ] Camera following
-- [ ] Screen boundaries
-- [ ] Interaction system
+- [x] Camera following
+- [x] Screen boundaries
+- [x] Interaction system
 
 ## Turn-Based Combat
-- [ ] Combat state machine
-- [ ] Action queueing
-- [ ] Damage calculations
-- [ ] Enemy AI
-- [ ] Victory/defeat conditions
-- [ ] Combat animations
+- [x] Combat state machine
+- [x] Action queueing
+- [x] Damage calculations
+- [x] Enemy AI
+- [x] Victory/defeat conditions
+- [x] Combat animations
 
 ## Assets and Content
 - [x] Sprite data structures
@@ -102,10 +102,10 @@
 ## Debug and Developer Tools
 - [x] Debug overlay component (basic)
 - [x] FPS counter
-- [ ] Hitbox visualization
-- [ ] State inspector
-- [ ] Entity spawner
-- [ ] Warp functionality
+- [x] Hitbox visualization
+- [x] State inspector
+- [x] Entity spawner
+- [x] Warp functionality
 - [x] Log level controls
 
 ## Testing

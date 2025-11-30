@@ -3,28 +3,28 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000 2>&1 | tee dev.log",
-    "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "start": "NODE_ENV=production node .next/standalone/server.js 2>&1 | tee server.log",
-    "lint": "next lint",
-    "test:utils": "tsx tests/utils.test.ts",
-    "test:engine": "tsx tests/engine.test.ts"
+    "dev": "vite --port 3000",
+    "build": "tsc && vite build",
+    "preview": "vite preview --port 3000",
+    "test": "tsx tests/run_tests.ts",
   },
   "dependencies": {
     "gl-matrix": "^3.4.4",
-    "next": "15.3.5",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tsx": "^4.20.3",
-    "zustand": "^5.0.6"
+    "next": "16.0.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsx": "^4.21.0",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.5",
-    "typescript": "^5"
+    "eslint": "^9.39.1",
+    "eslint-config-next": "16.0.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.0"
   }
 }
