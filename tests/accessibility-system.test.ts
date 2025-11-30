@@ -24,7 +24,7 @@ class AccessibilitySystemTestRunner {
   /**
    * Runs all registered tests
    */
-  public run(): void {
+  public run(): { passed: number; failed: number } {
     console.log('Running Accessibility System Tests...\n');
 
     for (const test of this.tests) {

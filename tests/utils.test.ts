@@ -27,7 +27,7 @@ class UtilTestRunner {
   /**
    * Runs all registered tests
    */
-  public run(): void {
+  public run(): { passed: number; failed: number } {
     console.log('Running Utility Tests...\n');
 
     for (const test of this.tests) {
@@ -43,6 +43,7 @@ class UtilTestRunner {
     }
 
     console.log(`\nTest Results: ${this.passed} passed, ${this.failed} failed`);
+    return { passed: this.passed, failed: this.failed };
   }
 
   /**

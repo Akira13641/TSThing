@@ -293,13 +293,16 @@ export class CameraSystem {
    */
   public isVisible(worldX: number, worldY: number, margin: number = 0): boolean {
     const screen = this.worldToScreen(worldX, worldY);
-    if (!screen || !this.viewport) return false;
-    const extendedMargin = margin / this.camera.zoom;
+    if (!screen || !this.viewport || !this.camera) return false;
+    
+    const viewport = this.viewport;
+    const camera = this.camera;
+    const extendedMargin = margin / camera.zoom;
     
     return screen.x >= -extendedMargin && 
-           screen.x <= this.viewport.width + extendedMargin &&
+           screen.x <= viewport.width + extendedMargin &&
            screen.y >= -extendedMargin && 
-           screen.y <= this.viewport.height + extendedMargin;
+           screen.y <= viewport.height + extendedMargin;
   }
 
   /**

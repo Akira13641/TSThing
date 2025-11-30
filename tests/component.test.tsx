@@ -123,7 +123,7 @@ class ComponentTestRunner {
   /**
    * Runs all registered tests
    */
-  public run(): void {
+  public run(): { passed: number; failed: number } {
     console.log('Running Component Tests...\n');
 
     for (const test of this.tests) {
@@ -139,6 +139,7 @@ class ComponentTestRunner {
     }
 
     console.log(`\nComponent Test Results: ${this.passed} passed, ${this.failed} failed`);
+    return { passed: this.passed, failed: this.failed };
   }
 
   /**

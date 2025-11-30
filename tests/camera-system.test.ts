@@ -26,7 +26,7 @@ class CameraSystemTestRunner {
   /**
    * Runs all registered tests
    */
-  public run(): void {
+  public run(): { passed: number; failed: number } {
     console.log('Running Camera System Tests...\n');
 
     for (const test of this.tests) {
@@ -42,6 +42,7 @@ class CameraSystemTestRunner {
     }
 
     console.log(`\nCamera System Test Results: ${this.passed} passed, ${this.failed} failed`);
+    return { passed: this.passed, failed: this.failed };
   }
 
   /**
@@ -59,6 +60,15 @@ class CameraSystemTestRunner {
   public assertEqual<T>(actual: T, expected: T, message: string): void {
     if (actual !== expected) {
       throw new Error(`${message}. Expected: ${expected}, Actual: ${actual}`);
+    }
+  }
+
+  /**
+   * Not equal assertion helper
+   */
+  public assertNotEqual<T>(actual: T, expected: T, message: string): void {
+    if (actual === expected) {
+      throw new Error(`${message}. Expected: ${expected} to be different from Actual: ${actual}`);
     }
   }
 

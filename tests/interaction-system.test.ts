@@ -26,7 +26,7 @@ class InteractionSystemTestRunner {
   /**
    * Runs all registered tests
    */
-  public run(): void {
+  public run(): { passed: number; failed: number } {
     console.log('Running Interaction System Tests...\n');
 
     for (const test of this.tests) {

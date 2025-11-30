@@ -133,8 +133,7 @@ export class DebugToolsSystem {
     fpsUpdateTime: 0
   };
 
-  /** Selected entity for inspection */
-  private selectedEntity: EntityId | null = null;
+
 
   /** Debug grid settings */
   private gridSettings = {
@@ -149,23 +148,12 @@ export class DebugToolsSystem {
   /** Available warp locations */
   private warpLocations: WarpLocation[] = [];
 
-  /** Debug console history */
-  private consoleHistory: Array<{ timestamp: number; level: string; message: string }> = [];
+  /** Debug overlay position */
+  private overlayPosition: DebugOverlayPosition = DebugOverlayPosition.TOP_LEFT;
 
-  /** Debug DOM elements */
-  private debugElements: {
-    overlay: HTMLElement | null;
-    inspector: HTMLElement | null;
-    spawner: HTMLElement | null;
-    warpMenu: HTMLElement | null;
-    console: HTMLElement | null;
-  } = {
-    overlay: null,
-    inspector: null,
-    spawner: null,
-    warpMenu: null,
-    console: null
-  };
+
+
+
 
   /**
    * Creates a new DebugToolsSystem instance
@@ -231,6 +219,7 @@ export class DebugToolsSystem {
    * @param position - New overlay position
    */
   public setOverlayPosition(position: DebugOverlayPosition): void {
+    this.overlayPosition = position;
     this.updateDebugElements();
   }
 
@@ -649,11 +638,12 @@ export class DebugToolsSystem {
    */
   private renderHitboxes(ctx: CanvasRenderingContext2D): void {
     if (!this.world) return;
-    const entities = this.world.query(['Position', 'Collision']);
+    const world = this.world;
+    const entities = world.query(['Position', 'Collision']);
     
     entities.forEach(entityId => {
-      const position = this.world.getComponent<Position>(entityId, 'Position');
-      const collision = this.world.getComponent<Collision>(entityId, 'Collision');
+      const position = world.getComponent<Position>(entityId, 'Position');
+      const collision = world.getComponent<Collision>(entityId, 'Collision');
       
       if (!position || !collision) return;
 
@@ -685,8 +675,9 @@ export class DebugToolsSystem {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.font = '12px monospace';
     
+    const world = this.world;
     entities.forEach(entityId => {
-      const position = this.world.getComponent<Position>(entityId, 'Position');
+      const position = world.getComponent<Position>(entityId, 'Position');
       if (position) {
         ctx.fillText(`ID: ${entityId}`, position.x + 10, position.y - 10);
       }
@@ -748,6 +739,8 @@ export class DebugToolsSystem {
   private updateDebugElements(): void {
     // This would update the DOM elements for debug tools
     // Implementation depends on the specific UI framework being used
+    // For now, just reference the overlay position to avoid unused variable warning
+    void this.overlayPosition;
   }
 
   /**

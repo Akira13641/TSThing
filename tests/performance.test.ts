@@ -28,7 +28,7 @@ class PerformanceTestRunner {
   /**
    * Runs all registered tests
    */
-  public run(): void {
+  public run(): { passed: number; failed: number } {
     console.log('Running Performance Tests...\n');
 
     for (const test of this.tests) {

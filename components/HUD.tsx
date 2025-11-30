@@ -330,6 +330,18 @@ const Minimap: React.FC<{
 Minimap.displayName = 'Minimap';
 
 /**
+ * Debug information interface
+ */
+interface DebugData {
+  entityId: EntityId | null;
+  timestamp: number;
+  memory: {
+    used: number;
+    total: number;
+  } | null;
+}
+
+/**
  * Debug Information component
  */
 const DebugInfo: React.FC<{
@@ -337,7 +349,11 @@ const DebugInfo: React.FC<{
   frameRate: number;
   entityCount: number;
 }> = memo(({ entityId, frameRate, entityCount }) => {
-  const [debugData, setDebugData] = useState<Record<string, unknown>>({});
+  const [debugData, setDebugData] = useState<DebugData>({
+    entityId: null,
+    timestamp: Date.now(),
+    memory: null
+  });
 
   useEffect(() => {
     // In a real implementation, this would fetch actual debug data
@@ -374,14 +390,14 @@ const DebugInfo: React.FC<{
       <div>Entities: {entityCount}</div>
       <div>Player ID: {entityId || 'None'}</div>
       
-      {debugData.memory && typeof debugData.memory === 'object' && 'used' in debugData.memory && 'total' in debugData.memory && (
-        <div>Memory: {Number((debugData.memory as any).used)}MB / {Number((debugData.memory as any).total)}MB</div>
+      {debugData.memory && (
+        <div>Memory: {debugData.memory.used}MB / {debugData.memory.total}MB</div>
       )}
       
       <div>Time: {new Date().toLocaleTimeString()}</div>
       
       <div style={{ marginTop: '8px', fontSize: '10px', color: '#888888' }}>
-        Last Update: {new Date(debugData.timestamp as number || 0).toLocaleTimeString()}
+        Last Update: {new Date(debugData.timestamp).toLocaleTimeString()}
       </div>
     </div>
   );

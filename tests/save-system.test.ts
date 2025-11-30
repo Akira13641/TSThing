@@ -26,7 +26,7 @@ class SaveSystemTestRunner {
   /**
    * Runs all registered tests
    */
-  public run(): void {
+  public run(): { passed: number; failed: number } {
     console.log('Running Save System Tests...\n');
 
     for (const test of this.tests) {
@@ -42,6 +42,7 @@ class SaveSystemTestRunner {
     }
 
     console.log(`\nSave System Test Results: ${this.passed} passed, ${this.failed} failed`);
+    return { passed: this.passed, failed: this.failed };
   }
 
   /**

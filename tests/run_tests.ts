@@ -20,7 +20,7 @@ import { accessibilityTestRunner as accessibilityComplianceTestRunner } from './
  */
 interface TestSuite {
   name: string;
-  runner: { run: () => void };
+  runner: { run: () => { passed: number; failed: number } };
   category: 'engine' | 'utils' | 'system' | 'component' | 'integration' | 'performance' | 'accessibility';
 }
 
@@ -145,48 +145,16 @@ class UnifiedTestRunner {
     let failed = 0;
     let errors: string[] = [];
     
-    // Capture console output to count results
-    const originalLog = console.log;
-    const originalError = console.error;
-    
-    const logEntries: string[] = [];
-    const errorEntries: string[] = [];
-    
-    console.log = (...args: any[]) => {
-      const message = args.join(' ');
-      logEntries.push(message);
-      originalLog.apply(console, args);
-    };
-    
-    console.error = (...args: any[]) => {
-      const message = args.join(' ');
-      errorEntries.push(message);
-      originalError.apply(console, args);
-    };
-    
     try {
-      // Run the test suite
-      suite.runner();
-      
-      // Count results from console output
-      logEntries.forEach(entry => {
-        if (entry.includes('✓')) {
-          passed++;
-        } else if (entry.includes('✗')) {
-          failed++;
-        }
-      });
-      
-      errors = errorEntries;
+      // Run the test suite and get results
+      const result = suite.runner.run();
+      passed = result.passed;
+      failed = result.failed;
       
     } catch (error) {
       failed++;
       errors.push(`Suite execution error: ${error}`);
     }
-    
-    // Restore console methods
-    console.log = originalLog;
-    console.error = originalError;
     
     const suiteEndTime = performance.now();
     const duration = suiteEndTime - suiteStartTime;
