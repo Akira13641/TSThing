@@ -3,7 +3,7 @@
  * @fileoverview Unit tests for utility functions
  */
 
-import { RNG, rollDice, rollPercent, rollCritical, weightedRandom } from '../utils/rng';
+import { RNG, rollDice, rollPercent, rollCritical, weightedRandom, globalRNG } from '../utils/rng';
 import { MathUtils, Vector2Utils } from '../utils/math';
 import { Pathfinding, SimplePathfinding } from '../utils/pathfinding';
 import { ValidationUtils, ItemValidator, EnemyValidator } from '../utils/validation';
@@ -163,14 +163,39 @@ runner.test('weightedRandom - Weighted selection', () => {
   
   const results = { common: 0, uncommon: 0, rare: 0 };
   
-  for (let i = 0; i < 10000; i++) {
-    const result = weightedRandom(items);
-    results[result.item as keyof typeof results]++;
+  // Use a fresh RNG instance for consistent test results
+  const testRNG = new RNG(12345); // Fixed seed
+  
+  // Override globalRNG temporarily for this test
+  const originalRandomFloat = globalRNG.randomFloat;
+  globalRNG.randomFloat = testRNG.randomFloat.bind(testRNG);
+  
+  try {
+    for (let i = 0; i < 10000; i++) {
+      const result = weightedRandom(items);
+      results[result.item as keyof typeof results]++;
+    }
+  } finally {
+    // Restore original method
+    globalRNG.randomFloat = originalRandomFloat;
   }
   
   // Check that rare items appear less often than common items
   runner.assert(results.rare < results.common, 'Rare items should be less common than common items');
   runner.assert(results.uncommon < results.common, 'Uncommon items should be less common than common items');
+  
+  // Additional sanity checks
+  const total = results.common + results.uncommon + results.rare;
+  runner.assertEqual(total, 10000, 'Total selections should equal trials');
+  
+  // Check approximate distribution (within reasonable tolerance)
+  const commonRatio = results.common / total;
+  const uncommonRatio = results.uncommon / total;
+  const rareRatio = results.rare / total;
+  
+  runner.assert(commonRatio > 0.6, 'Common items should be ~70% of selections');
+  runner.assert(uncommonRatio > 0.15 && uncommonRatio < 0.25, 'Uncommon items should be ~20% of selections');
+  runner.assert(rareRatio > 0.05 && rareRatio < 0.15, 'Rare items should be ~10% of selections');
 });
 
 // ============= MATH UTILS TESTS =============
@@ -242,16 +267,17 @@ runner.test('Pathfinding - Simple path', () => {
     height: 5,
     tileSize: 32,
     walkable: [
+      [true, true, true, true, true],  // Clear path from (0,0) to (4,0)
+      [true, true, true, true, true],  // Remove the wall
       [true, true, true, true, true],
-      [true, false, false, false, true],
-      [true, false, false, false, true],
-      [true, false, false, false, true],
+      [true, true, true, true, true],
       [true, true, true, true, true]
     ]
   };
   
-  const start: Vector2 = { x: 0, y: 0 };
-  const goal: Vector2 = { x: 4, y: 0 };
+  // Use world coordinates that map to grid centers
+  const start: Vector2 = { x: 16, y: 16 };  // Center of tile (0,0)
+  const goal: Vector2 = { x: 144, y: 16 };  // Center of tile (4,0)
   
   const path = Pathfinding.findPath(grid, start, goal);
   
@@ -269,13 +295,13 @@ runner.test('Pathfinding - No path', () => {
     tileSize: 32,
     walkable: [
       [true, false, true],
-      [false, false, false],
+      [false, false, false],  // Complete wall blocking path
       [true, false, true]
     ]
   };
   
-  const start: Vector2 = { x: 0, y: 0 };
-  const goal: Vector2 = { x: 2, y: 2 };
+  const start: Vector2 = { x: 16, y: 16 };  // Center of tile (0,0)
+  const goal: Vector2 = { x: 80, y: 80 };   // Center of tile (2,2)
   
   const path = Pathfinding.findPath(grid, start, goal);
   

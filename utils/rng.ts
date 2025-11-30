@@ -158,10 +158,10 @@ export function weightedRandom<T>(items: Array<{ item: T; weight: number }>): T 
   const totalWeight = items.reduce((sum, { weight }) => sum + weight, 0);
   let random = globalRNG.randomFloat(0, totalWeight);
   
-  for (const { item, weight } of items) {
-    random -= weight;
+  for (const entry of items) {
+    random -= entry.weight;
     if (random <= 0) {
-      return item;
+      return entry.item;
     }
   }
   

@@ -6,7 +6,22 @@
 import { SaveSystem, SaveGameData, SaveSlotInfo } from '../engine/SaveSystem';
 import { WorldManager } from '../engine/WorldManager';
 import { logger, LogSource } from '../engine/GlobalLogger';
-import { EntityId, Position, Health } from '../types';
+import { EntityId, Position, Health, CombatStats, Sprite, Velocity } from '../types';
+
+// Mock localStorage for Node.js testing environment
+const mockLocalStorage: Record<string, string> = {};
+
+const localStorageMock = {
+  getItem: (key: string) => mockLocalStorage[key] || null,
+  setItem: (key: string, value: string) => { mockLocalStorage[key] = value; },
+  removeItem: (key: string) => { delete mockLocalStorage[key]; },
+  clear: () => { Object.keys(mockLocalStorage).forEach(key => delete mockLocalStorage[key]); },
+  key: (index: number) => Object.keys(mockLocalStorage)[index] || null,
+  length: Object.keys(mockLocalStorage).length
+};
+
+// Set up global localStorage mock
+(globalThis as any).localStorage = localStorageMock;
 
 /**
  * Test runner for save system tests
@@ -107,10 +122,24 @@ runner.test('SaveSystem - Save game to slot', () => {
   
   saveSystem.setWorld(world);
   
-  // Create test entity
-  const entityId = world.createEntity(['Position', 'Health']);
+  // Create test entity with all required player components
+  const entityId = world.createEntity(['Position', 'Health', 'CombatStats', 'Sprite', 'Velocity']);
   world.addComponent(entityId, 'Position', { x: 100, y: 200 });
   world.addComponent(entityId, 'Health', { current: 50, max: 100 });
+  world.addComponent(entityId, 'CombatStats', { 
+    attacking: false, 
+    attack: 10, 
+    defense: 5, 
+    actionPoints: 3, 
+    maxActionPoints: 3 
+  });
+  world.addComponent(entityId, 'Sprite', { 
+    textureId: 'hero', 
+    frameIndex: 0, 
+    width: 16, 
+    height: 32 
+  });
+  world.addComponent(entityId, 'Velocity', { dx: 0, dy: 0 });
   
   const success = saveSystem.saveGame(1, 'Test Save');
   runner.assert(success, 'Save should succeed');
@@ -141,10 +170,24 @@ runner.test('SaveSystem - Load game from slot', () => {
   
   saveSystem.setWorld(world);
   
-  // First save
-  const entityId = world.createEntity(['Position', 'Health']);
+  // First save - create full player entity
+  const entityId = world.createEntity(['Position', 'Health', 'CombatStats', 'Sprite', 'Velocity']);
   world.addComponent(entityId, 'Position', { x: 300, y: 400 });
   world.addComponent(entityId, 'Health', { current: 75, max: 100 });
+  world.addComponent(entityId, 'CombatStats', { 
+    attacking: false, 
+    attack: 15, 
+    defense: 8, 
+    actionPoints: 3, 
+    maxActionPoints: 3 
+  });
+  world.addComponent(entityId, 'Sprite', { 
+    textureId: 'hero', 
+    frameIndex: 0, 
+    width: 16, 
+    height: 32 
+  });
+  world.addComponent(entityId, 'Velocity', { dx: 0, dy: 0 });
   
   const saveSuccess = saveSystem.saveGame(2, 'Load Test Save');
   runner.assert(saveSuccess, 'Save should succeed');
@@ -157,19 +200,28 @@ runner.test('SaveSystem - Load game from slot', () => {
   runner.assert(loadSuccess, 'Load should succeed');
   
   // Verify loaded data
-  const loadedEntities = world.query(['Position', 'Health']);
+  const loadedEntities = world.query(['Position', 'Health', 'CombatStats', 'Sprite']);
   runner.assertArrayLength(loadedEntities, 1, 'Should have 1 loaded entity');
   
   if (loadedEntities.length > 0) {
     const position = world.getComponent<Position>(loadedEntities[0].id, 'Position');
     const health = world.getComponent<Health>(loadedEntities[0].id, 'Health');
+    const combatState = world.getComponent<CombatStats>(loadedEntities[0].id, 'CombatStats');
+    const sprite = world.getComponent<Sprite>(loadedEntities[0].id, 'Sprite');
     
     runner.assertNotNull(position, 'Position should be loaded');
     runner.assertNotNull(health, 'Health should be loaded');
+    runner.assertNotNull(combatState, 'CombatState should be loaded');
+    runner.assertNotNull(sprite, 'Sprite should be loaded');
+    
+    // Verify specific values
     runner.assertEqual(position!.x, 300, 'Position X should match saved value');
     runner.assertEqual(position!.y, 400, 'Position Y should match saved value');
     runner.assertEqual(health!.current, 75, 'Health current should match saved value');
     runner.assertEqual(health!.max, 100, 'Health max should match saved value');
+    runner.assertEqual(combatState!.attack, 15, 'Combat attack should match saved value');
+    runner.assertEqual(combatState!.defense, 8, 'Combat defense should match saved value');
+    runner.assertEqual(sprite!.textureId, 'hero', 'Sprite texture should match saved value');
   }
 });
 

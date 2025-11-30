@@ -382,10 +382,15 @@ export class SaveSystem {
 
     // Find player entity (assuming first entity with required components)
     const playerEntities = this.world.query(['Position', 'Health', 'CombatStats', 'Sprite']);
+    
+    if (!Array.isArray(playerEntities) || playerEntities.length === 0) {
+      throw new Error(`Player entity not found. Query returned: ${JSON.stringify(playerEntities)}`);
+    }
+    
     const playerEntityId = playerEntities[0];
     
-    if (!playerEntityId) {
-      throw new Error('Player entity not found');
+    if (playerEntityId === undefined || playerEntityId === null) {
+      throw new Error(`Player entity not found. First entity ID is undefined. Query returned: ${JSON.stringify(playerEntities)}`);
     }
 
     const playerPosition = this.world.getComponent<Position>(playerEntityId, 'Position')!;

@@ -5,6 +5,48 @@
 
 import React from 'react';
 
+// Mock window for Node.js testing environment
+const mockWindow = {
+  innerWidth: 1024,
+  innerHeight: 768,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  dispatchEvent: () => {},
+  matchMedia: () => ({ matches: false } as any),
+  requestAnimationFrame: (callback: any) => setTimeout(callback, 16) as any,
+  cancelAnimationFrame: (id: any) => clearTimeout(id) as any,
+  getComputedStyle: () => ({}) as any,
+  pageXOffset: 0,
+  pageYOffset: 0,
+  scrollX: 0,
+  scrollY: 0,
+  scrollTo: () => {},
+  localStorage: {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+    clear: () => {},
+    key: () => null,
+    length: 0
+  }
+};
+
+// Make properties configurable
+Object.defineProperty(mockWindow, 'innerWidth', {
+  value: 1024,
+  writable: true,
+  configurable: true
+});
+
+Object.defineProperty(mockWindow, 'innerHeight', {
+  value: 768,
+  writable: true,
+  configurable: true
+});
+
+// Set up global window mock
+(globalThis as any).window = mockWindow;
+
 // Simple mock DOM for testing
 class MockDOM {
   private elements: Map<string, HTMLElement> = new Map();
@@ -58,20 +100,23 @@ class MockDOM {
   }
 }
 
-// Mock render function
-const mockDOM = new MockDOM();
+// Shared DOM instance for all tests
+const sharedMockDOM = new MockDOM();
 
+// Mock render function
 const render = (component: React.ReactElement) => {
   // Create a mock element and register it
-  const element = mockDOM.createElement('div');
+  const element = sharedMockDOM.createElement('div');
   const testId = component.props['data-testid'] || 'default';
-  mockDOM.registerElement(testId, element);
+  console.log(`Rendering component with test-id: ${testId}`);
+  sharedMockDOM.registerElement(testId, element);
+  console.log(`Registered element. Total elements: ${sharedMockDOM['elements'].size}`);
   return element;
 };
 
 const screen = {
-  queryByTestId: (testId: string) => mockDOM.queryByTestId(testId),
-  getByTestId: (testId: string) => mockDOM.getByTestId(testId)
+  queryByTestId: (testId: string) => sharedMockDOM.queryByTestId(testId),
+  getByTestId: (testId: string) => sharedMockDOM.getByTestId(testId)
 };
 
 const fireEvent = {
@@ -125,6 +170,9 @@ class ComponentTestRunner {
    */
   public run(): { passed: number; failed: number } {
     console.log('Running Component Tests...\n');
+    
+    // Clear DOM before each test
+    sharedMockDOM.clear();
 
     for (const test of this.tests) {
       try {

@@ -40,6 +40,7 @@ class AccessibilityTestRunner {
     }
 
     console.log(`\nAccessibility Test Results: ${this.passed} passed, ${this.failed} failed`);
+    return { passed: this.passed, failed: this.failed };
   }
 
   /**

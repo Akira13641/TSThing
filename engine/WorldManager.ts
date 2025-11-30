@@ -254,7 +254,7 @@ export class WorldManager {
    */
   public queryWithComponents(componentTypes: ComponentType[]): QueryResult {
     const entityIds = this.query(componentTypes);
-    const entities = entityIds.map(id => this.world.entities.get(id)!).filter(Boolean);
+    const entities = entityIds.map(id => this.world.entities.get(id)!).filter(entity => entity !== undefined);
     
     const components = new Map<EntityId, Map<ComponentType, unknown>>();
     

@@ -48,6 +48,7 @@ class IntegrationTestRunner {
     }
 
     console.log(`\nIntegration Test Results: ${this.passed} passed, ${this.failed} failed`);
+    return { passed: this.passed, failed: this.failed };
   }
 
   /**

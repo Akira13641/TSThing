@@ -10,7 +10,7 @@ import { cameraSystemTestRunner } from './camera-system.test';
 import { interactionSystemTestRunner } from './interaction-system.test';
 import { accessibilitySystemTestRunner } from './accessibility-system.test';
 import { debugToolsSystemTestRunner } from './debug-tools-system.test';
-import { componentTestRunner } from './component.test';
+import { componentTestRunner } from './component.test.tsx';
 import { integrationTestRunner } from './integration.test';
 import { performanceTestRunner } from './performance.test';
 import { accessibilityTestRunner as accessibilityComplianceTestRunner } from './accessibility.test';

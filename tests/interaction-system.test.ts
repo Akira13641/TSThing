@@ -42,6 +42,7 @@ class InteractionSystemTestRunner {
     }
 
     console.log(`\nInteraction System Test Results: ${this.passed} passed, ${this.failed} failed`);
+    return { passed: this.passed, failed: this.failed };
   }
 
   /**
