@@ -9,7 +9,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { WorldManager } from '../engine/WorldManager';
 import { logger, LogSource } from '../engine/GlobalLogger';
-import { EntityId, Position, Velocity, Health, Sprite, CombatState } from '../types';
+import { EntityId, Position, Velocity, Health, Sprite, CombatStats } from '../types';
 import { ErrorBoundary, GameEngineErrorBoundary } from './ErrorBoundary';
 import { HUD } from './HUD';
 import { DialogSystem } from './DialogSystem';
@@ -105,7 +105,7 @@ export const Game: React.FC<GameProps> = ({
     // Create player entity
     const world = (engineState as any).world; // Access to world manager
     if (world) {
-      const playerId = world.createEntity(['Position', 'Velocity', 'Health', 'Sprite', 'CombatState']);
+      const playerId = world.createEntity(['Position', 'Velocity', 'Health', 'Sprite', 'CombatStats']);
       
       // Add player components
       world.addComponent(playerId, 'Position', { x: width / 2, y: height / 2 });
@@ -117,7 +117,7 @@ export const Game: React.FC<GameProps> = ({
         width: 16, 
         height: 32 
       });
-      world.addComponent(playerId, 'CombatState', {
+      world.addComponent(playerId, 'CombatStats', {
         attacking: false,
         attack: 15,
         defense: 8,

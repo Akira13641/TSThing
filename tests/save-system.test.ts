@@ -298,8 +298,23 @@ runner.test('SaveSystem - Export save', () => {
 runner.test('SaveSystem - Import save', async () => {
   const saveSystem = new SaveSystem();
   
+  // Mock localStorage
+  const mockLocalStorage: Record<string, string> = {};
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: {
+      getItem: (key: string) => mockLocalStorage[key] || null,
+      setItem: (key: string, value: string) => { mockLocalStorage[key] = value; },
+      removeItem: (key: string) => { delete mockLocalStorage[key]; },
+      clear: () => { Object.keys(mockLocalStorage).forEach(key => delete mockLocalStorage[key]); },
+      key: (index: number) => Object.keys(mockLocalStorage)[index] || null,
+      length: Object.keys(mockLocalStorage).length
+    },
+    writable: true,
+    configurable: true
+  });
+  
   // Create mock file
-  const mockData = '{"test": "data"}';
+  const mockData = '{"meta":{"version":1,"timestamp":1234567890},"player":{"entityId":1,"position":{"x":0,"y":0},"health":{"current":100,"max":100},"combatState":{"attacking":false,"attack":10,"defense":5,"actionPoints":3,"maxActionPoints":3},"sprite":{"textureId":"hero","frameIndex":0,"width":32,"height":32},"velocity":{"dx":0,"dy":0},"level":1,"experience":0,"gold":100},"gameState":{"currentScene":"OVERWORLD","storyFlags":{},"completedQuests":[],"activeQuests":[],"switches":{},"variables":{}},"inventory":{"items":[],"maxSlots":20},"party":[],"world":{"entities":[],"componentData":{}},"system":{}}';
   const mockFile = new File([mockData], 'test.json', { type: 'application/json' });
   
   const importSuccess = await saveSystem.importSave(mockFile, 7);

@@ -7,8 +7,8 @@
 
 import React, { memo, useEffect, useState } from 'react';
 import { useUIStore } from '../store';
-import { useEntityComponent } from '../hooks/useGameEngine';
-import { EntityId, Health, CombatState } from '../types';
+import { useEntityComponent } from '../hooks/useEntityComponent';
+import { EntityId, Health, CombatStats } from '../types';
 import { logger, LogSource } from '../engine/GlobalLogger';
 
 /**
@@ -399,7 +399,7 @@ export const HUD: React.FC<HUDProps> = memo(({ playerId, showDebugInfo = false }
   
   // Get player health and combat state
   const playerHealth = useEntityComponent<Health>(playerId, 'Health');
-  const playerCombat = useEntityComponent<CombatState>(playerId, 'CombatState');
+  const playerCombat = useEntityComponent<CombatStats>(playerId, 'CombatState');
   
   // Mock additional game state (in real implementation, these would come from game state)
   const [gameStats, setGameStats] = useState({

@@ -6,7 +6,7 @@
  */
 
 import React, { Component, ReactNode } from 'react';
-import { logger, LogSource, LogLevel } from '../engine/GlobalLogger';
+import { logger, LogSource } from '../engine/GlobalLogger';
 
 /**
  * Error Boundary props interface

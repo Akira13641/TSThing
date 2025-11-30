@@ -5,7 +5,7 @@
 
 import { WorldManager } from './WorldManager';
 import { logger, LogSource } from './GlobalLogger';
-import { EntityId, Position, Health, CombatState, Sprite, Velocity } from '../types';
+import { EntityId, Position, Health, CombatStats, Sprite, Velocity } from '../types';
 import { GAME_CONFIG } from '../data/GameData';
 
 /**
@@ -38,7 +38,7 @@ export interface SaveGameData {
     /** Player health */
     health: Health;
     /** Player combat state */
-    combatState: CombatState;
+    combatState: CombatStats;
     /** Player sprite data */
     sprite: Sprite;
     /** Player velocity */
@@ -171,7 +171,7 @@ export class SaveSystem {
    * Creates a new SaveSystem instance
    */
   constructor() {
-    logger.info(LogSource.SYSTEM, 'SaveSystem initialized');
+    logger.info(LogSource.CORE, 'SaveSystem initialized');
   }
 
   /**
@@ -190,12 +190,12 @@ export class SaveSystem {
    */
   public saveGame(slot: number, saveName?: string): boolean {
     if (!this.world) {
-      logger.error(LogSource.SYSTEM, 'World manager not set for save operation');
+      logger.error(LogSource.CORE, 'World manager not set for save operation');
       return false;
     }
 
     if (slot < 1 || slot > GAME_CONFIG.MAX_SAVE_SLOTS) {
-      logger.error(LogSource.SYSTEM, `Invalid save slot: ${slot}`);
+      logger.error(LogSource.CORE, `Invalid save slot: ${slot}`);
       return false;
     }
 
@@ -205,7 +205,7 @@ export class SaveSystem {
       
       // Validate save data
       if (!this.validateSaveData(saveData)) {
-        logger.error(LogSource.SYSTEM, 'Save data validation failed');
+        logger.error(LogSource.CORE, 'Save data validation failed');
         return false;
       }
 
@@ -215,14 +215,14 @@ export class SaveSystem {
       
       localStorage.setItem(storageKey, serializedData);
       
-      logger.info(LogSource.SYSTEM, `Game saved to slot ${slot}: ${saveData.meta.name}`);
+      logger.info(LogSource.CORE, `Game saved to slot ${slot}: ${saveData.meta.name}`);
       
       // Update save count in stats
       this.updateSaveCount();
       
       return true;
     } catch (error) {
-      logger.error(LogSource.SYSTEM, `Failed to save game: ${error}`);
+      logger.error(LogSource.CORE, `Failed to save game: ${error}`);
       return false;
     }
   }
@@ -234,12 +234,12 @@ export class SaveSystem {
    */
   public loadGame(slot: number): boolean {
     if (!this.world) {
-      logger.error(LogSource.SYSTEM, 'World manager not set for load operation');
+      logger.error(LogSource.CORE, 'World manager not set for load operation');
       return false;
     }
 
     if (slot < 1 || slot > GAME_CONFIG.MAX_SAVE_SLOTS) {
-      logger.error(LogSource.SYSTEM, `Invalid save slot: ${slot}`);
+      logger.error(LogSource.CORE, `Invalid save slot: ${slot}`);
       return false;
     }
 
@@ -248,7 +248,7 @@ export class SaveSystem {
       const serializedData = localStorage.getItem(storageKey);
       
       if (!serializedData) {
-        logger.warn(LogSource.SYSTEM, `No save data found in slot ${slot}`);
+        logger.warn(LogSource.CORE, `No save data found in slot ${slot}`);
         return false;
       }
 
@@ -257,7 +257,7 @@ export class SaveSystem {
       
       // Validate loaded data
       if (!this.validateSaveData(saveData)) {
-        logger.error(LogSource.SYSTEM, `Invalid save data in slot ${slot}`);
+        logger.error(LogSource.CORE, `Invalid save data in slot ${slot}`);
         return false;
       }
 
@@ -267,11 +267,11 @@ export class SaveSystem {
       // Apply save data to world
       this.applySaveData(migratedData);
       
-      logger.info(LogSource.SYSTEM, `Game loaded from slot ${slot}: ${migratedData.meta.name}`);
+      logger.info(LogSource.CORE, `Game loaded from slot ${slot}: ${migratedData.meta.name}`);
       
       return true;
     } catch (error) {
-      logger.error(LogSource.SYSTEM, `Failed to load game from slot ${slot}: ${error}`);
+      logger.error(LogSource.CORE, `Failed to load game from slot ${slot}: ${error}`);
       return false;
     }
   }
@@ -283,7 +283,7 @@ export class SaveSystem {
    */
   public deleteSave(slot: number): boolean {
     if (slot < 1 || slot > GAME_CONFIG.MAX_SAVE_SLOTS) {
-      logger.error(LogSource.SYSTEM, `Invalid save slot: ${slot}`);
+      logger.error(LogSource.CORE, `Invalid save slot: ${slot}`);
       return false;
     }
 
@@ -291,10 +291,10 @@ export class SaveSystem {
       const storageKey = this.getStorageKey(slot);
       localStorage.removeItem(storageKey);
       
-      logger.info(LogSource.SYSTEM, `Save file deleted from slot ${slot}`);
+      logger.info(LogSource.CORE, `Save file deleted from slot ${slot}`);
       return true;
     } catch (error) {
-      logger.error(LogSource.SYSTEM, `Failed to delete save in slot ${slot}: ${error}`);
+      logger.error(LogSource.CORE, `Failed to delete save in slot ${slot}: ${error}`);
       return false;
     }
   }
@@ -320,7 +320,7 @@ export class SaveSystem {
             size: new Blob([serializedData]).size
           });
         } catch (error) {
-          logger.warn(LogSource.SYSTEM, `Corrupted save data in slot ${slot}`);
+          logger.warn(LogSource.CORE, `Corrupted save data in slot ${slot}`);
           slots.push({
             slot,
             occupied: false
@@ -381,8 +381,8 @@ export class SaveSystem {
     }
 
     // Find player entity (assuming first entity with required components)
-    const playerEntities = this.world.query(['Position', 'Health', 'CombatState', 'Sprite']);
-    const playerEntityId = playerEntities[0]?.id;
+    const playerEntities = this.world.query(['Position', 'Health', 'CombatStats', 'Sprite']);
+    const playerEntityId = playerEntities[0];
     
     if (!playerEntityId) {
       throw new Error('Player entity not found');
@@ -390,7 +390,7 @@ export class SaveSystem {
 
     const playerPosition = this.world.getComponent<Position>(playerEntityId, 'Position')!;
     const playerHealth = this.world.getComponent<Health>(playerEntityId, 'Health')!;
-    const playerCombat = this.world.getComponent<CombatState>(playerEntityId, 'CombatState')!;
+    const playerCombat = this.world.getComponent<CombatStats>(playerEntityId, 'CombatStats')!;
     const playerSprite = this.world.getComponent<Sprite>(playerEntityId, 'Sprite')!;
     const playerVelocity = this.world.getComponent<Velocity>(playerEntityId, 'Velocity')!;
 
@@ -494,20 +494,20 @@ export class SaveSystem {
     const requiredProps = ['meta', 'player', 'gameState', 'inventory', 'party', 'world', 'system'];
     for (const prop of requiredProps) {
       if (!(prop in data)) {
-        logger.warn(LogSource.SYSTEM, `Missing required property in save data: ${prop}`);
+        logger.warn(LogSource.CORE, `Missing required property in save data: ${prop}`);
         return false;
       }
     }
 
     // Validate meta data
     if (!data.meta.version || !data.meta.timestamp) {
-      logger.warn(LogSource.SYSTEM, 'Invalid meta data in save file');
+      logger.warn(LogSource.CORE, 'Invalid meta data in save file');
       return false;
     }
 
     // Validate player data
     if (!data.player.entityId || !data.player.position) {
-      logger.warn(LogSource.SYSTEM, 'Invalid player data in save file');
+      logger.warn(LogSource.CORE, 'Invalid player data in save file');
       return false;
     }
 
@@ -523,7 +523,7 @@ export class SaveSystem {
     // For now, just return the data as-is
     // In a real implementation, this would handle version migrations
     if (data.meta.version !== this.CURRENT_VERSION) {
-      logger.info(LogSource.SYSTEM, `Migrating save from version ${data.meta.version} to ${this.CURRENT_VERSION}`);
+      logger.info(LogSource.CORE, `Migrating save from version ${data.meta.version} to ${this.CURRENT_VERSION}`);
       
       // Update version
       data.meta.version = this.CURRENT_VERSION;
@@ -547,21 +547,21 @@ export class SaveSystem {
     this.world.clear();
 
     // Recreate player entity
-    const playerEntityId = this.world.createEntity(['Position', 'Health', 'CombatState', 'Sprite', 'Velocity']);
+    const playerEntityId = this.world.createEntity(['Position', 'Health', 'CombatStats', 'Sprite', 'Velocity']);
     
     // Apply player data
     this.world.addComponent(playerEntityId, 'Position', data.player.position);
     this.world.addComponent(playerEntityId, 'Health', data.player.health);
-    this.world.addComponent(playerEntityId, 'CombatState', data.player.combatState);
+    this.world.addComponent(playerEntityId, 'CombatStats', data.player.combatState);
     this.world.addComponent(playerEntityId, 'Sprite', data.player.sprite);
     this.world.addComponent(playerEntityId, 'Velocity', data.player.velocity);
 
-    logger.info(LogSource.SYSTEM, `Player entity recreated: ${playerEntityId}`);
+    logger.info(LogSource.CORE, `Player entity recreated: ${playerEntityId}`);
     
     // Apply other game state data
     // This would include recreating other entities, setting switches, etc.
     
-    logger.info(LogSource.SYSTEM, 'Save data applied successfully');
+    logger.info(LogSource.CORE, 'Save data applied successfully');
   }
 
   /**
@@ -579,7 +579,7 @@ export class SaveSystem {
   private updateSaveCount(): void {
     // This would update the global save count statistic
     // For now, just log it
-    logger.debug(LogSource.SYSTEM, 'Save count updated');
+    logger.debug(LogSource.CORE, 'Save count updated');
   }
 
   /**
@@ -593,7 +593,7 @@ export class SaveSystem {
       const serializedData = localStorage.getItem(storageKey);
       
       if (!serializedData) {
-        logger.warn(LogSource.SYSTEM, `No save data to export in slot ${slot}`);
+        logger.warn(LogSource.CORE, `No save data to export in slot ${slot}`);
         return false;
       }
 
@@ -608,10 +608,10 @@ export class SaveSystem {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      logger.info(LogSource.SYSTEM, `Save exported from slot ${slot}`);
+      logger.info(LogSource.CORE, `Save exported from slot ${slot}`);
       return true;
     } catch (error) {
-      logger.error(LogSource.SYSTEM, `Failed to export save from slot ${slot}: ${error}`);
+      logger.error(LogSource.CORE, `Failed to export save from slot ${slot}: ${error}`);
       return false;
     }
   }
@@ -628,7 +628,7 @@ export class SaveSystem {
       const saveData: SaveGameData = JSON.parse(text);
       
       if (!this.validateSaveData(saveData)) {
-        logger.error(LogSource.SYSTEM, 'Invalid save file data');
+        logger.error(LogSource.CORE, 'Invalid save file data');
         return false;
       }
 
@@ -640,10 +640,10 @@ export class SaveSystem {
       const storageKey = this.getStorageKey(slot);
       localStorage.setItem(storageKey, serializedData);
 
-      logger.info(LogSource.SYSTEM, `Save imported to slot ${slot}`);
+      logger.info(LogSource.CORE, `Save imported to slot ${slot}`);
       return true;
     } catch (error) {
-      logger.error(LogSource.SYSTEM, `Failed to import save: ${error}`);
+      logger.error(LogSource.CORE, `Failed to import save: ${error}`);
       return false;
     }
   }

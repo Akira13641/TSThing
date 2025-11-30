@@ -5,7 +5,7 @@
 
 import { WorldManager } from './WorldManager';
 import { logger, LogSource } from './GlobalLogger';
-import { EntityId, Position, Health, CombatState, Animation, Sprite } from '../types';
+import { EntityId, Position, Health, CombatStats, Animation, Sprite } from '../types';
 import { GAME_CONFIG } from '../data/GameData';
 
 /**
@@ -75,6 +75,10 @@ interface CombatParticipant {
   defeated: boolean;
   /** Last action taken */
   lastAction: CombatAction | null;
+  /** Health component data */
+  health?: Health;
+  /** Combat stats component data */
+  combatStats?: CombatStats;
 }
 
 /**
@@ -156,7 +160,9 @@ export class CombatSystem {
       originalPosition: { ...this.world.getComponent<Position>(playerEntityId, 'Position')! },
       turnOrder: 0,
       defeated: false,
-      lastAction: null
+      lastAction: null,
+      health: this.world.getComponent<Health>(playerEntityId, 'Health') || undefined,
+      combatStats: this.world.getComponent<CombatStats>(playerEntityId, 'CombatStats') || undefined
     });
 
     // Add enemy participants
@@ -169,7 +175,9 @@ export class CombatSystem {
           originalPosition: { ...position },
           turnOrder: index + 1,
           defeated: false,
-          lastAction: null
+          lastAction: null,
+          health: this.world.getComponent<Health>(enemyId, 'Health') || undefined,
+          combatStats: this.world.getComponent<CombatStats>(enemyId, 'CombatStats') || undefined
         });
       }
     });
@@ -281,7 +289,7 @@ export class CombatSystem {
     const enemy = this.participants.get(enemyId);
     if (!enemy || enemy.defeated) return;
 
-    const combatState = this.world?.getComponent<CombatState>(enemyId, 'CombatState');
+    const combatState = this.world?.getComponent<CombatStats>(enemyId, 'CombatStats');
     if (!combatState) return;
 
     // Simple AI logic
@@ -329,7 +337,7 @@ export class CombatSystem {
    * Queues a combat action
    * @param action - Action to queue
    */
-  public queueAction(action: Omit<CombatActionQueue, 'ready' | 'timer'>): void {
+  public queueAction(action: Omit<CombatActionQueue, 'ready' | 'timer' | 'delay'>): void {
     const queueItem: CombatActionQueue = {
       ...action,
       ready: false,
@@ -442,9 +450,9 @@ export class CombatSystem {
 
     if (!attacker || !target) return;
 
-    const attackerCombat = this.world?.getComponent<CombatState>(attacker.entityId, 'CombatState');
+    const attackerCombat = this.world?.getComponent<CombatStats>(attacker.entityId, 'CombatStats');
     const targetHealth = this.world?.getComponent<Health>(target.entityId, 'Health');
-    const targetCombat = this.world?.getComponent<CombatState>(target.entityId, 'CombatState');
+    const targetCombat = this.world?.getComponent<CombatStats>(target.entityId, 'CombatStats');
 
     if (!attackerCombat || !targetHealth || !targetCombat) return;
 
@@ -483,7 +491,7 @@ export class CombatSystem {
     const defender = this.participants.get(action.actorId);
     if (!defender) return;
 
-    const defenderCombat = this.world?.getComponent<CombatState>(defender.entityId, 'CombatState');
+    const defenderCombat = this.world?.getComponent<CombatStats>(defender.entityId, 'CombatStats');
     if (!defenderCombat) return;
 
     // Increase defense temporarily

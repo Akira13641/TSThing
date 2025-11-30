@@ -9,7 +9,7 @@ import React, { memo, useEffect, useState, useCallback } from 'react';
 import { useUIStore } from '../store';
 import { logger, LogSource } from '../engine/GlobalLogger';
 import { CombatSystem, CombatState, CombatAction } from '../engine/CombatSystem';
-import { EntityId, Health, CombatState } from '../types';
+import { EntityId, Health, CombatStats } from '../types';
 
 /**
  * Combat participant display component
@@ -18,7 +18,7 @@ const CombatParticipant: React.FC<{
   entityId: EntityId;
   name: string;
   health: Health;
-  combatState: CombatState;
+  combatState: CombatStats;
   isPlayer: boolean;
   isCurrentTurn: boolean;
   isDefeated: boolean;
@@ -108,7 +108,6 @@ const CombatParticipant: React.FC<{
         {isDefeated ? 'DEFEATED' : 
          isCurrentTurn ? 'READY' : 
          combatState.attacking ? 'ATTACKING' : 'WAITING'}
-        }
       </div>
     </div>
   );
@@ -374,13 +373,13 @@ export const CombatUI: React.FC<{
     } else if (combatState === CombatState.VICTORY) {
       addLogMessage('Victory! All enemies defeated!', 'heal');
       setTimeout(() => {
-        setDialogVisible(true, 'Congratulations! You have emerged victorious!\\n\\nExperience gained: ' + (stats as any).result?.experience || 0));
+        setDialogVisible(true, 'Congratulations! You have emerged victorious!\\n\\nExperience gained: ' + ((stats as any).result?.experience || 0));
         onClose();
       }, 2000);
     } else if (combatState === CombatState.DEFEAT) {
       addLogMessage('Defeat... You have been overwhelmed.', 'damage');
       setTimeout(() => {
-        setDialogVisible(true, 'You have been defeated...\\n\\nDo not give up! Try again when you\\'re stronger.');
+        setDialogVisible(true, 'You have been defeated...\\n\\nDo not give up! Try again when you\'re stronger.');
         onClose();
       }, 2000);
     }
@@ -464,7 +463,7 @@ export const CombatUI: React.FC<{
               entityId={participant.entityId}
               name={participant.isPlayer ? 'Hero' : 'Monster'}
               health={participant.health || { current: 0, max: 1 }}
-              combatState={participant.combatState || { attacking: false, attack: 0, defense: 0, actionPoints: 3, maxActionPoints: 3 }}
+              combatState={participant.combatStats || { attacking: false, attack: 0, defense: 0, actionPoints: 3, maxActionPoints: 3 }}
               isPlayer={participant.isPlayer}
               isCurrentTurn={combatState === CombatState.PLAYER_INPUT && participant.isPlayer}
               isDefeated={participant.defeated}

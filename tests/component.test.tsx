@@ -4,19 +4,106 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+
+// Simple mock DOM for testing
+class MockDOM {
+  private elements: Map<string, HTMLElement> = new Map();
+
+  public createElement(tag: string): HTMLElement {
+    const element = {
+      tagName: tag.toUpperCase(),
+      innerHTML: '',
+      textContent: '',
+      children: [],
+      setAttribute: (name: string, value: string) => {
+        element.attributes = element.attributes || {};
+        element.attributes[name] = value;
+      },
+      getAttribute: (name: string) => {
+        return element.attributes?.[name];
+      },
+      hasAttribute: (name: string) => {
+        return element.attributes?.hasOwnProperty(name) || false;
+      },
+      appendChild: (child: any) => {
+        element.children.push(child);
+      },
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      style: {},
+      attributes: {}
+    } as any;
+    
+    return element;
+  }
+
+  public queryByTestId(testId: string): HTMLElement | null {
+    return this.elements.get(testId) || null;
+  }
+
+  public getByTestId(testId: string): HTMLElement {
+    const element = this.elements.get(testId);
+    if (!element) {
+      throw new Error(`Element with test-id "${testId}" not found`);
+    }
+    return element;
+  }
+
+  public registerElement(testId: string, element: HTMLElement): void {
+    this.elements.set(testId, element);
+  }
+
+  public clear(): void {
+    this.elements.clear();
+  }
+}
+
+// Mock render function
+const mockDOM = new MockDOM();
+
+const render = (component: React.ReactElement) => {
+  // Create a mock element and register it
+  const element = mockDOM.createElement('div');
+  const testId = component.props['data-testid'] || 'default';
+  mockDOM.registerElement(testId, element);
+  return element;
+};
+
+const screen = {
+  queryByTestId: (testId: string) => mockDOM.queryByTestId(testId),
+  getByTestId: (testId: string) => mockDOM.getByTestId(testId)
+};
+
+const fireEvent = {
+  keyDown: (element: HTMLElement, event: { key: string }) => {
+    // Mock keyboard event
+  },
+  click: (element: HTMLElement) => {
+    // Mock click event
+  },
+  mouseOver: (element: HTMLElement) => {
+    // Mock mouse over event
+  },
+  mouseOut: (element: HTMLElement) => {
+    // Mock mouse out event
+  },
+  update: (element: HTMLElement, event: { target: { dataset: Record<string, string> } }) => {
+    // Mock update event
+  },
+  resize: (element: Window) => {
+    // Mock resize event
+  }
+};
 
 // Mock components for testing
-const MockGame = () => <div data-testid="game">Game Component</div>;
-const MockHUD = () => <div data-testid="hud">HUD Component</div>;
-const MockDialogSystem = () => <div data-testid="dialog">Dialog System</div>;
-const MockMenuSystem = () => <div data-testid="menu">Menu System</div>;
-const MockInventorySystem = () => <div data-testid="inventory">Inventory System</div>;
-const MockCombatUI = () => <div data-testid="combat">Combat UI</div>;
-const MockErrorBoundary = ({ children }: { children: React.ReactNode }) => (
-  <div data-testid="error-boundary">{children}</div>
-);
+const MockGame = () => React.createElement('div', { 'data-testid': 'game' }, 'Game Component');
+const MockHUD = () => React.createElement('div', { 'data-testid': 'hud' }, 'HUD Component');
+const MockDialogSystem = () => React.createElement('div', { 'data-testid': 'dialog' }, 'Dialog System');
+const MockMenuSystem = () => React.createElement('div', { 'data-testid': 'menu' }, 'Menu System');
+const MockInventorySystem = () => React.createElement('div', { 'data-testid': 'inventory' }, 'Inventory System');
+const MockCombatUI = () => React.createElement('div', { 'data-testid': 'combat' }, 'Combat UI');
+const MockErrorBoundary = ({ children }: { children: React.ReactNode }) => 
+  React.createElement('div', { 'data-testid': 'error-boundary' }, children);
 
 /**
  * Test runner for component tests

@@ -81,7 +81,7 @@ export class AccessibilitySystem {
   private keyboardNavigation = {
     enabled: false,
     currentIndex: 0,
-    focusableElements: HTMLElement[] = []
+    focusableElements: [] as HTMLElement[]
   };
 
   /** Input assistance state */
@@ -472,7 +472,6 @@ export class AccessibilitySystem {
             background-color: #00FFFF !important;
           }
         `;
-        }
         document.head.appendChild(this.highContrastStyles);
       }
     } else {
@@ -505,7 +504,6 @@ export class AccessibilitySystem {
             font-size: 2.5em !important;
           }
         `;
-        }
         document.head.appendChild(this.largeTextStyles);
       }
     } else {
@@ -542,7 +540,6 @@ export class AccessibilitySystem {
             scroll-behavior: auto !important;
           }
         `;
-        }
         document.head.appendChild(this.reducedMotionStyles);
       }
     } else {

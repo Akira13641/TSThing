@@ -263,7 +263,7 @@ runner.test('InteractionSystem - Negated conditions', () => {
     id: 'negated_test',
     type: InteractionType.OPEN,
     name: 'No Gold Key Door',
-    description: 'Door that opens when you DON\\'T have gold key',
+    description: 'Door that opens when you DON\'T have gold key',
     range: 50,
     enabled: true,
     singleUse: false,

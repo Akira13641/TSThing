@@ -147,9 +147,9 @@ export interface Collision {
 }
 
 /**
- * Combat state component for battle entities
+ * Combat stats component for battle entities
  */
-export interface CombatState {
+export interface CombatStats {
   /** Whether entity is currently attacking */
   attacking: boolean;
   /** Attack power value */
