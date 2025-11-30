@@ -3,7 +3,7 @@
  * @fileoverview Core WebGL rendering system for efficient sprite batch rendering
  */
 
-import { mat4, vec2 } from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 import { TextureData, ShaderSource, Rectangle } from '../types';
 import { logger, LogSource } from './GlobalLogger';
 
@@ -324,7 +324,7 @@ export class WebGLRenderer {
     this.createBuffers();
     
     // Re-upload all textures
-    for (const [textureId, textureData] of this.textureCache) {
+    for (const [_textureId, _textureData] of this.textureCache) {
       // Texture data would need to be cached for restoration
       // This is a simplified version
     }
@@ -520,7 +520,7 @@ export class WebGLRenderer {
     if (!this.gl || !this.vertexBuffer || batch.vertices.length === 0) return;
 
     // Bind texture
-    this.gl.bindTexture(this.gl.TEXTURE_2D, batch.glTexture);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, batch.glTexture || null);
 
     // Create vertex data array
     const vertexData = new Float32Array(batch.vertices.length * 10); // 10 floats per vertex (x, y, u, v, r, g, b, a, z, pad)

@@ -138,7 +138,7 @@ export function useCanvasResize(
     if (!container) return;
 
     // Create resize observer for better performance than window resize events
-    observerRef.current = new ResizeObserver((entries) => {
+    observerRef.current = new ResizeObserver((_entries) => {
       // Debounce resize events
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current);

@@ -151,11 +151,6 @@ function createTileSprite(color: number, pattern: 'solid' | 'checkerboard' | 'do
   const height = 32;
   const data = new Uint8Array(width * height * 4);
 
-  const r = (color >> 24) & 0xFF;
-  const g = (color >> 16) & 0xFF;
-  const b = (color >> 8) & 0xFF;
-  const a = color & 0xFF;
-
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const offset = (y * width + x) * 4;

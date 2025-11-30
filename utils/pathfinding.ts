@@ -215,7 +215,7 @@ export class Pathfinding {
    * @param b - Second position
    * @returns Distance (always 1 for adjacent grid positions)
    */
-  private static distance(a: Vector2, b: Vector2): number {
+  private static distance(_a: Vector2, _b: Vector2): number {
     return 1; // All adjacent moves have equal cost in this implementation
   }
 

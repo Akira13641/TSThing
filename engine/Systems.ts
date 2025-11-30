@@ -3,7 +3,8 @@
  * @fileoverview Core systems for entity behavior and game logic
  */
 
-import { World, EntityId, Position, Velocity, Sprite, Animation, AnimationDef } from '../types';
+import { Position, Velocity, Sprite, Animation } from '../types';
+import { WorldManager } from './WorldManager';
 import { logger, LogSource } from './GlobalLogger';
 import { ANIMATION_REGISTRY } from '../assets/SpriteAssets';
 
@@ -11,7 +12,7 @@ import { ANIMATION_REGISTRY } from '../assets/SpriteAssets';
  * Movement system
  * Updates entity positions based on velocity
  */
-export function movementSystem(world: World, deltaTime: number): void {
+export function movementSystem(world: WorldManager, deltaTime: number): void {
   const entities = world.query(['Position', 'Velocity']);
   
   for (const entityId of entities) {
@@ -33,7 +34,7 @@ export function movementSystem(world: World, deltaTime: number): void {
  * Animation system
  * Updates sprite animations based on timing
  */
-export function animationSystem(world: World, deltaTime: number): void {
+export function animationSystem(world: WorldManager, deltaTime: number): void {
   const entities = world.query(['Animation', 'Sprite']);
   
   for (const entityId of entities) {
@@ -88,7 +89,7 @@ export function animationSystem(world: World, deltaTime: number): void {
  * Input handling system
  * Processes player input and updates entity states
  */
-export function inputSystem(world: World, deltaTime: number, inputState: Map<string, boolean>): void {
+export function inputSystem(world: WorldManager, _deltaTime: number, inputState: Map<string, boolean>): void {
   // Find player entity (for now, assume first entity with Velocity component is player)
   const entities = world.query(['Position', 'Velocity']);
   
@@ -143,7 +144,7 @@ export function inputSystem(world: World, deltaTime: number, inputState: Map<str
  * Camera system
  * Updates camera to follow target entity
  */
-export function cameraSystem(world: World, deltaTime: number): void {
+export function cameraSystem(_world: WorldManager, _deltaTime: number): void {
   // This would integrate with the renderer's camera system
   // For now, it's a placeholder
 }
@@ -152,7 +153,7 @@ export function cameraSystem(world: World, deltaTime: number): void {
  * Collision system
  * Handles entity collisions and boundary checks
  */
-export function collisionSystem(world: World, deltaTime: number): void {
+export function collisionSystem(world: WorldManager, _deltaTime: number): void {
   const entities = world.query(['Position', 'Collision']);
   
   for (const entityId of entities) {
@@ -182,7 +183,7 @@ export function collisionSystem(world: World, deltaTime: number): void {
  * Render preparation system
  * Prepares entities for rendering by sorting and batching
  */
-export function renderPrepSystem(world: World, deltaTime: number): void {
+export function renderPrepSystem(world: WorldManager, _deltaTime: number): void {
   // Sort entities by Y position for proper depth rendering
   // This would typically be handled by the renderer, but we prepare data here
   const entities = world.query(['Sprite', 'Position']);
@@ -219,7 +220,7 @@ export const SYSTEM_REGISTRY = [
  * Registers all systems with the world manager
  * @param world - World manager instance
  */
-export function registerAllSystems(world: any): void {
+export function registerAllSystems(_world: any): void {
   // Sort systems by priority
   const sortedSystems = [...SYSTEM_REGISTRY].sort((a, b) => a.priority - b.priority);
   

@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Main Game Component
  * @fileoverview Primary game component integrating all engine systems
@@ -7,8 +9,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { WorldManager } from '../engine/WorldManager';
 import { logger, LogSource } from '../engine/GlobalLogger';
-import { EntityId, Position, Sprite, Velocity, Animation } from '../types';
-import { TEXTURE_REGISTRY } from '../assets/SpriteAssets';
+import { EntityId, Position, Velocity } from '../types';
 
 /**
  * Game component props
@@ -31,17 +32,15 @@ export const Game: React.FC<GameProps> = ({
   height = 768, 
   showDebug = false 
 }) => {
-  const [playerEntityId, setPlayerEntityId] = useState<EntityId | null>(null);
+  const [playerEntityId] = useState<EntityId | null>(null);
   const [showLogger, setShowLogger] = useState(false);
+  const [debugMode, setDebugMode] = useState(showDebug);
   
   const {
     state: engineState,
     canvasRef,
     startGame,
-    stopGame,
-    togglePause,
-    getComponent,
-    subscribeToComponent
+    togglePause
   } = useGameEngine(
     // Custom update function
     useCallback((world: WorldManager, deltaTime: number) => {
@@ -86,7 +85,7 @@ export const Game: React.FC<GameProps> = ({
     if (!engineState.running || playerEntityId === null) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      let velocity = { dx: 0, dy: 0 };
+      const velocity = { dx: 0, dy: 0 };
       const speed = 200; // pixels per second
 
       switch (e.key) {
@@ -108,6 +107,12 @@ export const Game: React.FC<GameProps> = ({
           break;
         case ' ':
           togglePause();
+          break;
+        case 'g':
+          setDebugMode(prev => !prev);
+          break;
+        case 'l':
+          setShowLogger(prev => !prev);
           break;
       }
 
@@ -166,7 +171,7 @@ export const Game: React.FC<GameProps> = ({
 
   // Debug overlay component
   const DebugOverlay: React.FC = () => {
-    if (!showDebug) return null;
+    if (!debugMode) return null;
 
     return (
       <div style={{

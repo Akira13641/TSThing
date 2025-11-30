@@ -162,7 +162,7 @@ export class EnemyValidator {
       try {
         AnimationValidator.validate(animation);
       } catch (error) {
-        throw new ValidationError(`Invalid animation '${name}': ${error.message}`, `sprite.animations.${name}`, animation);
+        throw new ValidationError(`Invalid animation '${name}': ${(error as Error).message}`, `sprite.animations.${name}`, animation);
       }
     });
 
@@ -268,7 +268,7 @@ export class MapValidator {
         try {
           TileValidator.validate(tile);
         } catch (error) {
-          throw new ValidationError(`Invalid tile at (${x}, ${y}): ${error.message}`, `tiles[${y}][${x}]`, tile);
+          throw new ValidationError(`Invalid tile at (${x}, ${y}): ${(error as Error).message}`, `tiles[${y}][${x}]`, tile);
         }
       }
     }

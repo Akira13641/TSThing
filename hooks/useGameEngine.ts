@@ -9,7 +9,7 @@ import { WebGLRenderer } from '../engine/WebGLRenderer';
 import { InputSystem } from '../engine/InputSystem';
 import { WorldManager } from '../engine/WorldManager';
 import { logger, LogSource } from '../engine/GlobalLogger';
-import { EntityId, ComponentType } from '../types';
+import { EntityId, ComponentType, Position, Sprite } from '../types';
 
 /**
  * Game engine state interface
@@ -139,14 +139,14 @@ export function useGameEngine(
       
       // Sort by Y position for proper depth ordering
       const sortedEntities = entities.map(entityId => {
-        const position = worldManagerRef.current!.getComponent(entityId, 'Position');
+        const position = worldManagerRef.current!.getComponent(entityId, 'Position') as Position | undefined;
         return { entityId, position };
       }).sort((a, b) => (a.position?.y || 0) - (b.position?.y || 0));
 
       // Render each entity
       sortedEntities.forEach(({ entityId }) => {
-        const sprite = worldManagerRef.current!.getComponent(entityId, 'Sprite');
-        const position = worldManagerRef.current!.getComponent(entityId, 'Position');
+        const sprite = worldManagerRef.current!.getComponent(entityId, 'Sprite') as Sprite | undefined;
+        const position = worldManagerRef.current!.getComponent(entityId, 'Position') as Position | undefined;
         
         if (sprite && position) {
           renderer.drawSprite(
@@ -354,7 +354,7 @@ export function useGameEngine(
 
   return {
     state,
-    canvasRef,
+    canvasRef: canvasRef as React.RefObject<HTMLCanvasElement>,
     startGame,
     stopGame,
     togglePause,

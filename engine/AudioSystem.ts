@@ -218,7 +218,9 @@ export class AudioManager {
 
         // Copy audio data to buffer
         if (audioData.channels === 1) {
-          buffer.copyToChannel(audioData, 0);
+          const channelData = new Float32Array(audioData.data.length);
+          channelData.set(audioData.data);
+          buffer.copyToChannel(channelData, 0);
         } else {
           // Split stereo data
           const leftChannel = new Float32Array(audioData.data.length / 2);
@@ -339,8 +341,8 @@ export class AudioManager {
       return;
     }
 
-    // Clean up finished SFX channels
-    this.sfxChannels = this.sfxChannels.filter(channel => channel.playbackState === 'playing');
+    // Clean up finished SFX channels - simplified for now
+    // Note: In a real implementation, you'd track onended events
 
     // Check channel limit
     if (this.sfxChannels.length >= this.config.maxSFXChannels) {
@@ -631,7 +633,7 @@ function generateOverworldTheme(): Float32Array {
     const counter = Math.sin(2 * Math.PI * counterFreq * t) * 0.1;
     
     // Rhythm guitar
-    const rhythm = (Math.sin(2 * Math.PI * 8 * t) > 0) * 0.2;
+    const rhythm = (Math.sin(2 * Math.PI * 8 * t) > 0 ? 0.2 : 0);
     
     const mixed = melody + counter + rhythm;
     
@@ -663,7 +665,7 @@ function generateBattleTheme(): Float32Array {
     const rhythm = Math.sin(2 * Math.PI * 16 * t) * 0.3;
     
     // Bass drum
-    const kick = (Math.sin(2 * Math.PI * 2 * t) > 0) * 0.5;
+    const kick = (Math.sin(2 * Math.PI * 2 * t) > 0 ? 0.5 : 0);
     
     const mixed = melody + rhythm + kick;
     

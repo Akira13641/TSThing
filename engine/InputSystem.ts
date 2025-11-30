@@ -101,22 +101,22 @@ export class InputSystem {
   private previousState: InputState;
   
   /** Keyboard mapping */
-  private keyboardMapping: KeyboardMapping;
+  private keyboardMapping!: KeyboardMapping;
   
   /** Gamepad mapping */
-  private gamepadMapping: GamepadMapping;
+  private gamepadMapping!: GamepadMapping;
   
   /** Touch configuration */
-  private touchConfig: TouchConfig;
+  private touchConfig!: TouchConfig;
   
   /** Virtual buttons */
-  private virtualButtons: Map<InputAction, VirtualButton>;
+  private virtualButtons!: Map<InputAction, VirtualButton>;
   
   /** D-pad state */
-  private dPad: DPadState;
+  private dPad!: DPadState;
   
   /** Event listeners */
-  private listeners: Map<string, EventListener>;
+  private listeners: Map<string, (evt: Event) => void>;
   
   /** Whether input system is enabled */
   private enabled: boolean;
@@ -341,8 +341,8 @@ export class InputSystem {
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
 
-    this.listeners.set('keydown', keyDownHandler);
-    this.listeners.set('keyup', keyUpHandler);
+    this.listeners.set('keydown', keyDownHandler as (evt: Event) => void);
+    this.listeners.set('keyup', keyUpHandler as (evt: Event) => void);
 
     // Touch events
     const touchStartHandler = (e: TouchEvent) => this.handleTouchStart(e);
@@ -353,9 +353,9 @@ export class InputSystem {
     document.addEventListener('touchmove', touchMoveHandler, { passive: false });
     document.addEventListener('touchend', touchEndHandler, { passive: false });
 
-    this.listeners.set('touchstart', touchStartHandler);
-    this.listeners.set('touchmove', touchMoveHandler);
-    this.listeners.set('touchend', touchEndHandler);
+    this.listeners.set('touchstart', touchStartHandler as (evt: Event) => void);
+    this.listeners.set('touchmove', touchMoveHandler as (evt: Event) => void);
+    this.listeners.set('touchend', touchEndHandler as (evt: Event) => void);
   }
 
   /**

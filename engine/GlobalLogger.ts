@@ -191,7 +191,7 @@ export class GlobalLogger {
 
     const message = this.config.verboseMode 
       ? `${prefix} ${entry.message}` 
-      : `${prefix} ${message}`;
+      : `${prefix} ${entry.message}`;
 
     switch (entry.level) {
       case LogLevel.DEBUG:
