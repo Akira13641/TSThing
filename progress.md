@@ -6,7 +6,7 @@
 - [x] gl-matrix dependency installed
 - [x] Core types and interfaces defined
 - [x] Global Logger implementation
-- [ ] Error boundaries and error handling
+- [x] Error boundaries and error handling
 
 ## Entity Component System (ECS)
 - [x] World Manager implementation
@@ -66,20 +66,20 @@
 ## UI Components (React)
 - [x] React hooks for canvas resize and keyboard input
 - [x] UI-only state management store
-- [ ] HUD implementation
-- [ ] Dialog system
-- [ ] Menu system
-- [ ] Inventory screen
+- [x] HUD implementation
+- [x] Dialog system
+- [x] Menu system
+- [x] Inventory screen
 - [ ] Battle UI
-- [ ] Error boundaries
+- [x] Error boundaries
 - [ ] Accessibility features
 
 ## Game Mechanics
 - [x] Math utilities for game calculations
 - [x] Pathfinding algorithms (A* and simple)
 - [x] Validation utilities for game data
-- [ ] Grid-based movement
-- [ ] Collision detection
+- [x] Grid-based movement
+- [x] Collision detection
 - [ ] Camera following
 - [ ] Screen boundaries
 - [ ] Interaction system
@@ -97,7 +97,7 @@
 - [x] Hardcoded pixel art assets
 - [x] Audio composition
 - [x] Shader constants
-- [ ] Game data tables
+- [x] Game data tables
 
 ## Debug and Developer Tools
 - [x] Debug overlay component (basic)
