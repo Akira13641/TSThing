@@ -129,7 +129,8 @@ export class GameLoop {
     this.state.accumulator = 0;
 
     // Start the main loop
-    this.animationFrameId = requestAnimationFrame(this.loop.bind(this));
+    this.animationFrameId = (globalThis as any).requestAnimationFrame?.(this.loop.bind(this)) || 
+      setTimeout(() => this.loop(Date.now()), 16);
 
     logger.info(LogSource.CORE, 'GameLoop started');
   }
@@ -147,7 +148,8 @@ export class GameLoop {
 
     // Cancel animation frame
     if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
+      (globalThis as any).cancelAnimationFrame?.(this.animationFrameId) || 
+        clearTimeout(this.animationFrameId);
       this.animationFrameId = null;
     }
 
@@ -248,7 +250,8 @@ export class GameLoop {
     this.state.frameCount++;
 
     // Continue the loop
-    this.animationFrameId = requestAnimationFrame(this.loop.bind(this));
+    this.animationFrameId = (globalThis as any).requestAnimationFrame?.(this.loop.bind(this)) || 
+      setTimeout(() => this.loop(Date.now()), 16);
   }
 
   /**

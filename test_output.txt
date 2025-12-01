@@ -1,0 +1,946 @@
+
+> aetherial-vanguard@0.1.0 test
+> tsx tests/run_tests.ts
+
+Running Engine Tests...
+
+[2025-12-01T02:38:54.893Z] [INFO] [ECS] WorldManager initialized 
+✓ WorldManager - Create entity
+[2025-12-01T02:38:54.894Z] [INFO] [ECS] WorldManager initialized 
+✓ WorldManager - Add component
+[2025-12-01T02:38:54.894Z] [INFO] [ECS] WorldManager initialized 
+✓ WorldManager - Query entities
+[2025-12-01T02:38:54.894Z] [INFO] [ECS] WorldManager initialized 
+✓ WorldManager - Remove component
+[2025-12-01T02:38:54.895Z] [INFO] [ECS] WorldManager initialized 
+✓ WorldManager - Destroy entity
+[2025-12-01T02:38:54.895Z] [INFO] [ECS] WorldManager initialized 
+✓ WorldManager - Component subscription
+[2025-12-01T02:38:54.895Z] [INFO] [CORE] GameLoop initialized with 0.016666666666666666s fixed timestep 
+✓ GameLoop - Initialization
+[2025-12-01T02:38:54.895Z] [INFO] [CORE] GameLoop initialized with 0.016666666666666666s fixed timestep 
+[2025-12-01T02:38:54.895Z] [INFO] [CORE] GameLoop started 
+[2025-12-01T02:38:54.896Z] [INFO] [CORE] GameLoop stopped 
+✓ GameLoop - Start and stop
+[2025-12-01T02:38:54.896Z] [INFO] [CORE] GameLoop initialized with 0.016666666666666666s fixed timestep 
+[2025-12-01T02:38:54.896Z] [INFO] [CORE] GameLoop started 
+✓ GameLoop - Pause functionality
+✓ GlobalLogger - Basic logging
+[2025-12-01T02:38:54.896Z] [WARN] [CORE] Warning message 
+✓ GlobalLogger - Log levels
+✓ GlobalLogger - Configuration
+[2025-12-01T02:38:54.896Z] [WARN] [UI] Warning message 
+[2025-12-01T02:38:54.896Z] [ERROR] [RENDERER] Error message 
+✗ GlobalLogger - Log statistics
+  Error: Error: Should have 3 total log entries. Expected: 3, Actual: 2
+✓ Integration - World and Game Loop
+✗ Integration - Logger and World
+  Error: Error: World operations should be logged
+
+Test Results: 13 passed, 2 failed
+Running Utility Tests...
+
+✓ RNG - Basic functionality
+✓ RNG - Seeded reproducibility
+✓ RNG - Random integer
+✓ RNG - Random choice
+✓ rollDice - Standard dice
+✓ rollPercent - Percentage chance
+✗ weightedRandom - Weighted selection
+  Error: Error: Rare items should be less common than common items
+✓ MathUtils - Clamp
+✓ MathUtils - Lerp
+✓ MathUtils - Distance
+✓ MathUtils - Point in rect
+✓ Vector2Utils - Basic operations
+✓ Vector2Utils - Magnitude and normalization
+✓ Vector2Utils - Distance
+✓ Pathfinding - Simple path
+✓ Pathfinding - No path
+✓ SimplePathfinding - Straight path
+✓ ValidationUtils - Basic validation
+✓ ItemValidator - Valid item
+✓ ItemValidator - Invalid item
+✓ EnemyValidator - Valid enemy
+✓ EnemyValidator - Invalid enemy
+
+Test Results: 21 passed, 1 failed
+Running Save System Tests...
+
+✓ SaveSystem - Initialization
+✓ SaveSystem - World manager assignment
+[2025-12-01T02:38:54.925Z] [WARN] [CORE] Invalid player data in save file 
+[2025-12-01T02:38:54.925Z] [ERROR] [CORE] Save data validation failed 
+✗ SaveSystem - Save game to slot
+  Error: Error: Save should succeed
+[2025-12-01T02:38:54.925Z] [ERROR] [CORE] Invalid save slot: 11 
+✓ SaveSystem - Save to invalid slot
+[2025-12-01T02:38:54.925Z] [ERROR] [CORE] World manager not set for save operation 
+✓ SaveSystem - Save without world
+[2025-12-01T02:38:54.926Z] [WARN] [CORE] Invalid player data in save file 
+[2025-12-01T02:38:54.926Z] [ERROR] [CORE] Save data validation failed 
+✗ SaveSystem - Load game from slot
+  Error: Error: Save should succeed
+[2025-12-01T02:38:54.926Z] [ERROR] [CORE] Invalid save slot: 11 
+✓ SaveSystem - Load from invalid slot
+[2025-12-01T02:38:54.926Z] [WARN] [CORE] No save data found in slot 9 
+✓ SaveSystem - Load non-existent save
+✓ SaveSystem - Get save slots
+[2025-12-01T02:38:54.926Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ SaveSystem - Check save exists
+  Error: Error: Slot 3 should exist after save
+[2025-12-01T02:38:54.927Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ SaveSystem - Delete save
+  Error: Error: Slot 5 should exist after save
+[2025-12-01T02:38:54.927Z] [ERROR] [CORE] Invalid save slot: 11 
+✓ SaveSystem - Delete from invalid slot
+[2025-12-01T02:38:54.944Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ SaveSystem - Auto-save
+  Error: Error: Auto-save should succeed
+[2025-12-01T02:38:54.945Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+[2025-12-01T02:38:54.945Z] [WARN] [CORE] No save data to export in slot 6 
+✗ SaveSystem - Export save
+  Error: Error: Export should succeed
+✓ SaveSystem - Import save
+[2025-12-01T02:38:54.946Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ SaveSystem - Validate save data structure
+  Error: Error: Save with complete data should succeed
+[2025-12-01T02:38:54.946Z] [WARN] [CORE] No save data found in slot 1 
+✓ SaveSystem - Handle corrupted save data
+[2025-12-01T02:38:54.946Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✓ SaveSystem - Handle storage quota exceeded
+[2025-12-01T02:38:54.946Z] [WARN] [CORE] No save data found in slot 1 
+✗ SaveSystem - Version migration
+  Error: Error: Migration should succeed
+
+Save System Test Results: 11 passed, 8 failed
+Running Camera System Tests...
+
+✓ CameraSystem - Initialization
+✓ CameraSystem - World manager assignment
+✓ CameraSystem - Viewport setup
+✗ CameraSystem - Instant follow mode
+  Error: Error: Instant follow should immediately match target X. Expected: 100, Actual: 400
+✗ CameraSystem - Smooth follow mode
+  Error: Error: Smooth follow should move toward target X
+✓ CameraSystem - Lookahead follow mode
+✗ CameraSystem - Elastic follow mode
+  Error: Error: Elastic follow should show spring behavior
+✓ CameraSystem - Dead zone
+✓ CameraSystem - Set boundaries
+✗ CameraSystem - Enforce boundaries
+  Error: Error: X should be clamped to minimum boundary. Expected: 100, Actual: 500
+✗ CameraSystem - Disable boundaries
+  Error: Error: Position should not be clamped when boundaries disabled. Expected: 10000, Actual: 0
+✗ CameraSystem - World to screen coordinates
+  Error: Error: World X should map to screen X correctly. Expected: 500, Actual: 0
+✗ CameraSystem - Screen to world coordinates
+  Error: Error: Screen X should map to world X correctly. Expected: 500, Actual: 0
+✗ CameraSystem - Coordinate conversion with zoom
+  Error: Error: World X should be scaled by zoom. Expected: 600, Actual: 0
+✗ CameraSystem - Point visibility
+  Error: Error: Center point should be visible
+✗ CameraSystem - Visibility with margin
+  Error: Error: Point just outside should be visible with margin
+✗ CameraSystem - Camera shake
+  Error: Error: Position should return to original after shake. Expected: 400, Actual: 0
+✗ CameraSystem - Camera transition
+  Error: Error: X should be between start and end
+✗ CameraSystem - Zoom limits
+  Error: Error: Zoom should be clamped to minimum. Expected: 0.1, Actual: 1
+✗ CameraSystem - Get camera bounds
+  Error: Error: Bounds width should match viewport. Expected: 800, Actual: 0
+✗ CameraSystem - Bounds with zoom
+  Error: Error: Bounds width should be viewport divided by zoom. Expected: 400, Actual: 0
+✗ CameraSystem - Reset camera
+  Error: Error: X should reset to viewport center. Expected: 400, Actual: 0
+
+Camera System Test Results: 6 passed, 16 failed
+Running Interaction System Tests...
+
+✓ InteractionSystem - Initialization
+✓ InteractionSystem - World manager assignment
+✓ InteractionSystem - Player assignment
+✓ InteractionSystem - Create interactive entity
+✓ InteractionSystem - Always condition
+✓ InteractionSystem - Item requirement condition
+✓ InteractionSystem - Story flag condition
+✓ InteractionSystem - Level requirement condition
+✗ InteractionSystem - Negated conditions
+  Error: Error: Negated condition should pass when item not present
+✓ InteractionSystem - Range multiplier
+✓ InteractionSystem - Priority calculation
+✓ InteractionSystem - Single use interactions
+✗ InteractionSystem - Inventory management
+  Error: Error: Should still have one item
+✓ InteractionSystem - Story flag management
+✓ InteractionSystem - Player level management
+✓ InteractionSystem - Interaction execution
+
+Interaction System Test Results: 14 passed, 2 failed
+Running Accessibility System Tests...
+
+✓ AccessibilitySystem - Initialization
+✓ AccessibilitySystem - Default options
+✓ AccessibilitySystem - Update options
+✓ AccessibilitySystem - Screen reader enable/disable
+✓ AccessibilitySystem - Text-to-speech
+✓ AccessibilitySystem - Show subtitles
+✓ AccessibilitySystem - Subtitle size
+✓ AccessibilitySystem - Audio visual indicators
+✓ AccessibilitySystem - Color blind modes
+✓ AccessibilitySystem - High contrast mode
+✓ AccessibilitySystem - Large text mode
+✓ AccessibilitySystem - Reduced motion
+✓ AccessibilitySystem - Input assistance
+✓ AccessibilitySystem - Input processing
+✓ AccessibilitySystem - Keyboard navigation
+✓ AccessibilitySystem - Focus trap
+✓ AccessibilitySystem - Settings persistence
+
+Accessibility System Test Results: 17 passed, 0 failed
+Running Debug Tools System Tests...
+
+✓ DebugToolsSystem - Initialization
+✓ DebugToolsSystem - World manager assignment
+✓ DebugToolsSystem - Player assignment
+✗ DebugToolsSystem - Default configuration
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✓ DebugToolsSystem - Update configuration
+✗ DebugToolsSystem - Toggle features
+  Error: Error: Hitboxes should be toggled on initially
+✗ DebugToolsSystem - Spawn entity
+  Error: Error: Spawned entity should exist in world
+✗ DebugToolsSystem - Spawn invalid entity
+  Error: ReferenceError: debugTools is not defined
+✗ DebugToolsSystem - Warp to location
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Warp to invalid location
+  Error: ReferenceError: debugTools is not defined
+✗ DebugToolsSystem - Inspect entity
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Inspect invalid entity
+  Error: ReferenceError: debugTools is not defined
+✗ DebugToolsSystem - Help command
+  Error: ReferenceError: debugTools is not defined
+✗ DebugToolsSystem - Spawn command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Warp command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Heal command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Give command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Clear command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Reset command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Invalid command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Performance metrics update
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Overlay position
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Spawn entities initialization
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Warp locations initialization
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Debug canvas creation
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✓ DebugToolsSystem - Keyboard shortcuts setup
+
+Debug Tools System Test Results: 5 passed, 21 failed
+Running Component Tests...
+
+Rendering component with test-id: default
+✗ Game Component - Renders without crashing
+  Error: Error: Element with test-id "game" should exist
+Rendering component with test-id: default
+✗ Game Component - Has correct accessibility attributes
+  Error: Error: Element with test-id "game" not found
+Rendering component with test-id: default
+✗ Game Component - Handles keyboard events
+  Error: Error: Element with test-id "game" not found
+Rendering component with test-id: default
+✗ Game Component - Responsive design
+  Error: Error: Element with test-id "game" not found
+Rendering component with test-id: default
+✗ HUD Component - Renders health display
+  Error: Error: Element with test-id "hud" should exist
+Rendering component with test-id: default
+✗ HUD Component - Updates when health changes
+  Error: Error: Element with test-id "hud" not found
+Rendering component with test-id: default
+✗ HUD Component - Shows debug info when enabled
+  Error: Error: Element with test-id "hud" not found
+Rendering component with test-id: default
+✗ HUD Component - Accessibility compliance
+  Error: Error: Element with test-id "hud" not found
+Rendering component with test-id: default
+✗ Dialog System - Renders dialog text
+  Error: Error: Element with test-id "dialog" should exist
+Rendering component with test-id: default
+✗ Dialog System - Handles dialog navigation
+  Error: Error: Element with test-id "dialog" not found
+Rendering component with test-id: default
+✗ Dialog System - Supports auto-advance
+  Error: Error: Element with test-id "dialog" not found
+Rendering component with test-id: default
+✗ Dialog System - Accessibility features
+  Error: Error: Element with test-id "dialog" not found
+Rendering component with test-id: default
+✗ Menu System - Renders menu items
+  Error: Error: Element with test-id "menu" should exist
+Rendering component with test-id: default
+✗ Menu System - Handles menu navigation
+  Error: Error: Element with test-id "menu" not found
+Rendering component with test-id: default
+✗ Menu System - Supports mouse/touch interaction
+  Error: Error: Element with test-id "menu" not found
+Rendering component with test-id: default
+✗ Menu System - Keyboard accessibility
+  Error: Error: Element with test-id "menu" not found
+Rendering component with test-id: default
+✗ Inventory System - Displays items
+  Error: Error: Element with test-id "inventory" should exist
+Rendering component with test-id: default
+✗ Inventory System - Handles item selection
+  Error: Error: Element with test-id "inventory" not found
+Rendering component with test-id: default
+✗ Inventory System - Supports item management
+  Error: Error: Element with test-id "inventory" not found
+Rendering component with test-id: default
+✗ Inventory System - Accessibility compliance
+  Error: Error: Element with test-id "inventory" not found
+Rendering component with test-id: default
+✗ Combat UI - Renders combat interface
+  Error: Error: Element with test-id "combat" should exist
+Rendering component with test-id: default
+✗ Combat UI - Displays participant information
+  Error: Error: Element with test-id "combat" not found
+Rendering component with test-id: default
+✗ Combat UI - Handles action selection
+  Error: Error: Element with test-id "combat" not found
+Rendering component with test-id: default
+✗ Combat UI - Shows combat log
+  Error: Error: Element with test-id "combat" not found
+Rendering component with test-id: default
+✗ Combat UI - Accessibility features
+  Error: Error: Element with test-id "combat" not found
+Rendering component with test-id: default
+✓ Error Boundary - Catches component errors
+Rendering component with test-id: default
+✓ Error Boundary - Shows error message
+Rendering component with test-id: default
+✓ Error Boundary - Provides fallback UI
+Rendering component with test-id: default
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Responsive Design - Mobile viewport
+Rendering component with test-id: default
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Responsive Design - Tablet viewport
+Rendering component with test-id: default
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Responsive Design - Desktop viewport
+Rendering component with test-id: default
+Rendering component with test-id: default
+Rendering component with test-id: default
+✗ Accessibility - Screen reader support
+  Error: Error: Element with test-id "game" not found
+Rendering component with test-id: default
+Rendering component with test-id: default
+✗ Accessibility - Keyboard navigation
+  Error: Error: Element with test-id "menu" not found
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Accessibility - High contrast mode
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Accessibility - Reduced motion
+
+Component Test Results: 8 passed, 27 failed
+Running Integration Tests...
+
+Running Performance Tests...
+
+✓ WorldManager - Entity creation performance
+✗ WorldManager - Component addition performance
+  Error: ReferenceError: i is not defined
+✓ WorldManager - Query performance
+✓ WorldManager - Memory efficiency
+✓ GameLoop - High FPS performance
+✓ GameLoop - Delta time accuracy
+✓ CombatSystem - Large battle performance
+✓ CameraSystem - Following performance
+✓ CameraSystem - Bounds checking performance
+✓ Memory Leak - Entity lifecycle
+✓ Memory Leak - System references
+✗ Scalability - Linear scaling
+  Error: Error: Performance should scale linearly. Expected: <= 2, Actual: Infinity
+✓ Scalability - Query performance
+
+Performance Test Results: 11 passed, 2 failed
+Running Accessibility Tests...
+
+✓ Screen Reader - Text-to-speech initialization
+✓ Screen Reader - Speech synthesis support
+✓ Screen Reader - Speech announcements
+✓ Visual Accessibility - High contrast mode
+✓ Visual Accessibility - Large text mode
+✓ Visual Accessibility - Color blind filters
+✓ Visual Accessibility - Reduced motion
+✓ Keyboard Navigation - Focus management
+✓ Keyboard Navigation - Arrow key handling
+✓ Keyboard Navigation - Tab order
+✓ Focus Trap - Creation
+✓ Focus Trap - Focus management
+✓ Focus Trap - Release
+✓ Input Assistance - Button holding
+✓ Input Assistance - Rapid fire
+✓ Input Assistance - Stick sensitivity
+✓ Audio Visual Indicators - Damage indicators
+✓ Audio Visual Indicators - Heal indicators
+✓ Audio Visual Indicators - Level up indicators
+✓ Subtitle System - Display subtitles
+✓ Subtitle System - Subtitle sizing
+✓ Subtitle System - Auto-hide functionality
+✓ Settings Persistence - Save settings
+✓ Settings Persistence - Load settings
+
+Accessibility Test Results: 24 passed, 0 failed
+🧪 Aetherial Vanguard - Unified Test Runner
+==================================================
+
+🔧 Running Engine Tests...
+Running Engine Tests...
+
+✓ WorldManager - Create entity
+✓ WorldManager - Add component
+✓ WorldManager - Query entities
+✓ WorldManager - Remove component
+✓ WorldManager - Destroy entity
+✓ WorldManager - Component subscription
+✓ GameLoop - Initialization
+✓ GameLoop - Start and stop
+✓ GameLoop - Pause functionality
+✗ GlobalLogger - Basic logging
+  Error: Error: Console should be called when logging
+[2025-12-01T02:38:55.025Z] [WARN] [CORE] Warning message 
+✓ GlobalLogger - Log levels
+✓ GlobalLogger - Configuration
+[2025-12-01T02:38:55.025Z] [WARN] [UI] Warning message 
+[2025-12-01T02:38:55.025Z] [ERROR] [RENDERER] Error message 
+✗ GlobalLogger - Log statistics
+  Error: Error: Should have 3 total log entries. Expected: 3, Actual: 2
+✓ Integration - World and Game Loop
+✗ Integration - Logger and World
+  Error: Error: World operations should be logged
+
+Test Results: 25 passed, 5 failed
+✅ Engine Tests completed in 1.00ms
+   📊 Results: 25 passed, 5 failed
+
+🔧 Running Utility Tests...
+Running Utility Tests...
+
+✓ RNG - Basic functionality
+✓ RNG - Seeded reproducibility
+✓ RNG - Random integer
+✓ RNG - Random choice
+✓ rollDice - Standard dice
+✓ rollPercent - Percentage chance
+✗ weightedRandom - Weighted selection
+  Error: Error: Rare items should be less common than common items
+✓ MathUtils - Clamp
+✓ MathUtils - Lerp
+✓ MathUtils - Distance
+✓ MathUtils - Point in rect
+✓ Vector2Utils - Basic operations
+✓ Vector2Utils - Magnitude and normalization
+✓ Vector2Utils - Distance
+✓ Pathfinding - Simple path
+✓ Pathfinding - No path
+✓ SimplePathfinding - Straight path
+✓ ValidationUtils - Basic validation
+✓ ItemValidator - Valid item
+✓ ItemValidator - Invalid item
+✓ EnemyValidator - Valid enemy
+✓ EnemyValidator - Invalid enemy
+
+Test Results: 42 passed, 2 failed
+✅ Utility Tests completed in 6.00ms
+   📊 Results: 42 passed, 2 failed
+
+🔧 Running Save System Tests...
+Running Save System Tests...
+
+✓ SaveSystem - Initialization
+✓ SaveSystem - World manager assignment
+[2025-12-01T02:38:55.031Z] [WARN] [CORE] Invalid player data in save file 
+[2025-12-01T02:38:55.031Z] [ERROR] [CORE] Save data validation failed 
+✗ SaveSystem - Save game to slot
+  Error: Error: Save should succeed
+[2025-12-01T02:38:55.031Z] [ERROR] [CORE] Invalid save slot: 11 
+✓ SaveSystem - Save to invalid slot
+[2025-12-01T02:38:55.031Z] [ERROR] [CORE] World manager not set for save operation 
+✓ SaveSystem - Save without world
+[2025-12-01T02:38:55.032Z] [WARN] [CORE] Invalid player data in save file 
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Save data validation failed 
+✗ SaveSystem - Load game from slot
+  Error: Error: Save should succeed
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Invalid save slot: 11 
+✓ SaveSystem - Load from invalid slot
+[2025-12-01T02:38:55.032Z] [WARN] [CORE] No save data found in slot 9 
+✓ SaveSystem - Load non-existent save
+✓ SaveSystem - Get save slots
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ SaveSystem - Check save exists
+  Error: Error: Slot 3 should exist after save
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ SaveSystem - Delete save
+  Error: Error: Slot 5 should exist after save
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Invalid save slot: 11 
+✓ SaveSystem - Delete from invalid slot
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ SaveSystem - Auto-save
+  Error: Error: Auto-save should succeed
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+[2025-12-01T02:38:55.032Z] [WARN] [CORE] No save data to export in slot 6 
+✗ SaveSystem - Export save
+  Error: Error: Export should succeed
+✓ SaveSystem - Import save
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ SaveSystem - Validate save data structure
+  Error: Error: Save with complete data should succeed
+[2025-12-01T02:38:55.032Z] [WARN] [CORE] No save data found in slot 1 
+✓ SaveSystem - Handle corrupted save data
+[2025-12-01T02:38:55.032Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✓ SaveSystem - Handle storage quota exceeded
+[2025-12-01T02:38:55.032Z] [WARN] [CORE] No save data found in slot 1 
+✗ SaveSystem - Version migration
+  Error: Error: Migration should succeed
+
+Save System Test Results: 22 passed, 16 failed
+✅ Save System Tests completed in 2.00ms
+   📊 Results: 22 passed, 16 failed
+
+🔧 Running Camera System Tests...
+Running Camera System Tests...
+
+✓ CameraSystem - Initialization
+✓ CameraSystem - World manager assignment
+✓ CameraSystem - Viewport setup
+✗ CameraSystem - Instant follow mode
+  Error: Error: Instant follow should immediately match target X. Expected: 100, Actual: 400
+✗ CameraSystem - Smooth follow mode
+  Error: Error: Smooth follow should move toward target X
+✓ CameraSystem - Lookahead follow mode
+✗ CameraSystem - Elastic follow mode
+  Error: Error: Elastic follow should show spring behavior
+✓ CameraSystem - Dead zone
+✓ CameraSystem - Set boundaries
+✗ CameraSystem - Enforce boundaries
+  Error: Error: X should be clamped to minimum boundary. Expected: 100, Actual: 500
+✗ CameraSystem - Disable boundaries
+  Error: Error: Position should not be clamped when boundaries disabled. Expected: 10000, Actual: 0
+✗ CameraSystem - World to screen coordinates
+  Error: Error: World X should map to screen X correctly. Expected: 500, Actual: 0
+✗ CameraSystem - Screen to world coordinates
+  Error: Error: Screen X should map to world X correctly. Expected: 500, Actual: 0
+✗ CameraSystem - Coordinate conversion with zoom
+  Error: Error: World X should be scaled by zoom. Expected: 600, Actual: 0
+✗ CameraSystem - Point visibility
+  Error: Error: Center point should be visible
+✗ CameraSystem - Visibility with margin
+  Error: Error: Point just outside should be visible with margin
+✗ CameraSystem - Camera shake
+  Error: Error: Position should return to original after shake. Expected: 400, Actual: 0
+✗ CameraSystem - Camera transition
+  Error: Error: X should be between start and end
+✗ CameraSystem - Zoom limits
+  Error: Error: Zoom should be clamped to minimum. Expected: 0.1, Actual: 1
+✗ CameraSystem - Get camera bounds
+  Error: Error: Bounds width should match viewport. Expected: 800, Actual: 0
+✗ CameraSystem - Bounds with zoom
+  Error: Error: Bounds width should be viewport divided by zoom. Expected: 400, Actual: 0
+✗ CameraSystem - Reset camera
+  Error: Error: X should reset to viewport center. Expected: 400, Actual: 0
+
+Camera System Test Results: 12 passed, 32 failed
+✅ Camera System Tests completed in 0.00ms
+   📊 Results: 12 passed, 32 failed
+
+🔧 Running Interaction System Tests...
+Running Interaction System Tests...
+
+✓ InteractionSystem - Initialization
+✓ InteractionSystem - World manager assignment
+✓ InteractionSystem - Player assignment
+✓ InteractionSystem - Create interactive entity
+✓ InteractionSystem - Always condition
+✓ InteractionSystem - Item requirement condition
+✓ InteractionSystem - Story flag condition
+✓ InteractionSystem - Level requirement condition
+✗ InteractionSystem - Negated conditions
+  Error: Error: Negated condition should pass when item not present
+✓ InteractionSystem - Range multiplier
+✓ InteractionSystem - Priority calculation
+✓ InteractionSystem - Single use interactions
+✗ InteractionSystem - Inventory management
+  Error: Error: Should still have one item
+✓ InteractionSystem - Story flag management
+✓ InteractionSystem - Player level management
+✓ InteractionSystem - Interaction execution
+
+Interaction System Test Results: 28 passed, 4 failed
+✅ Interaction System Tests completed in 1.00ms
+   📊 Results: 28 passed, 4 failed
+
+🔧 Running Accessibility System Tests...
+Running Accessibility System Tests...
+
+✓ AccessibilitySystem - Initialization
+✓ AccessibilitySystem - Default options
+✓ AccessibilitySystem - Update options
+✓ AccessibilitySystem - Screen reader enable/disable
+✓ AccessibilitySystem - Text-to-speech
+✓ AccessibilitySystem - Show subtitles
+✓ AccessibilitySystem - Subtitle size
+✓ AccessibilitySystem - Audio visual indicators
+✓ AccessibilitySystem - Color blind modes
+✓ AccessibilitySystem - High contrast mode
+✓ AccessibilitySystem - Large text mode
+✓ AccessibilitySystem - Reduced motion
+✓ AccessibilitySystem - Input assistance
+✓ AccessibilitySystem - Input processing
+✓ AccessibilitySystem - Keyboard navigation
+✓ AccessibilitySystem - Focus trap
+✓ AccessibilitySystem - Settings persistence
+
+Accessibility System Test Results: 34 passed, 0 failed
+✅ Accessibility System Tests completed in 0.00ms
+   📊 Results: 34 passed, 0 failed
+
+🔧 Running Debug Tools System Tests...
+Running Debug Tools System Tests...
+
+✓ DebugToolsSystem - Initialization
+✓ DebugToolsSystem - World manager assignment
+✓ DebugToolsSystem - Player assignment
+✗ DebugToolsSystem - Default configuration
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✓ DebugToolsSystem - Update configuration
+✗ DebugToolsSystem - Toggle features
+  Error: Error: Hitboxes should be toggled on initially
+✗ DebugToolsSystem - Spawn entity
+  Error: Error: Spawned entity should exist in world
+✗ DebugToolsSystem - Spawn invalid entity
+  Error: ReferenceError: debugTools is not defined
+✗ DebugToolsSystem - Warp to location
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Warp to invalid location
+  Error: ReferenceError: debugTools is not defined
+✗ DebugToolsSystem - Inspect entity
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Inspect invalid entity
+  Error: ReferenceError: debugTools is not defined
+✗ DebugToolsSystem - Help command
+  Error: ReferenceError: debugTools is not defined
+✗ DebugToolsSystem - Spawn command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Warp command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Heal command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Give command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Clear command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Reset command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Invalid command
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Performance metrics update
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Overlay position
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Spawn entities initialization
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Warp locations initialization
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✗ DebugToolsSystem - Debug canvas creation
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✓ DebugToolsSystem - Keyboard shortcuts setup
+
+Debug Tools System Test Results: 10 passed, 42 failed
+✅ Debug Tools System Tests completed in 1.00ms
+   📊 Results: 10 passed, 42 failed
+
+🔧 Running Component Tests...
+Running Component Tests...
+
+Rendering component with test-id: default
+✗ Game Component - Renders without crashing
+  Error: Error: Element with test-id "game" should exist
+Rendering component with test-id: default
+✗ Game Component - Has correct accessibility attributes
+  Error: Error: Element with test-id "game" not found
+Rendering component with test-id: default
+✗ Game Component - Handles keyboard events
+  Error: Error: Element with test-id "game" not found
+Rendering component with test-id: default
+✗ Game Component - Responsive design
+  Error: Error: Element with test-id "game" not found
+Rendering component with test-id: default
+✗ HUD Component - Renders health display
+  Error: Error: Element with test-id "hud" should exist
+Rendering component with test-id: default
+✗ HUD Component - Updates when health changes
+  Error: Error: Element with test-id "hud" not found
+Rendering component with test-id: default
+✗ HUD Component - Shows debug info when enabled
+  Error: Error: Element with test-id "hud" not found
+Rendering component with test-id: default
+✗ HUD Component - Accessibility compliance
+  Error: Error: Element with test-id "hud" not found
+Rendering component with test-id: default
+✗ Dialog System - Renders dialog text
+  Error: Error: Element with test-id "dialog" should exist
+Rendering component with test-id: default
+✗ Dialog System - Handles dialog navigation
+  Error: Error: Element with test-id "dialog" not found
+Rendering component with test-id: default
+✗ Dialog System - Supports auto-advance
+  Error: Error: Element with test-id "dialog" not found
+Rendering component with test-id: default
+✗ Dialog System - Accessibility features
+  Error: Error: Element with test-id "dialog" not found
+Rendering component with test-id: default
+✗ Menu System - Renders menu items
+  Error: Error: Element with test-id "menu" should exist
+Rendering component with test-id: default
+✗ Menu System - Handles menu navigation
+  Error: Error: Element with test-id "menu" not found
+Rendering component with test-id: default
+✗ Menu System - Supports mouse/touch interaction
+  Error: Error: Element with test-id "menu" not found
+Rendering component with test-id: default
+✗ Menu System - Keyboard accessibility
+  Error: Error: Element with test-id "menu" not found
+Rendering component with test-id: default
+✗ Inventory System - Displays items
+  Error: Error: Element with test-id "inventory" should exist
+Rendering component with test-id: default
+✗ Inventory System - Handles item selection
+  Error: Error: Element with test-id "inventory" not found
+Rendering component with test-id: default
+✗ Inventory System - Supports item management
+  Error: Error: Element with test-id "inventory" not found
+Rendering component with test-id: default
+✗ Inventory System - Accessibility compliance
+  Error: Error: Element with test-id "inventory" not found
+Rendering component with test-id: default
+✗ Combat UI - Renders combat interface
+  Error: Error: Element with test-id "combat" should exist
+Rendering component with test-id: default
+✗ Combat UI - Displays participant information
+  Error: Error: Element with test-id "combat" not found
+Rendering component with test-id: default
+✗ Combat UI - Handles action selection
+  Error: Error: Element with test-id "combat" not found
+Rendering component with test-id: default
+✗ Combat UI - Shows combat log
+  Error: Error: Element with test-id "combat" not found
+Rendering component with test-id: default
+✗ Combat UI - Accessibility features
+  Error: Error: Element with test-id "combat" not found
+Rendering component with test-id: default
+✓ Error Boundary - Catches component errors
+Rendering component with test-id: default
+✓ Error Boundary - Shows error message
+Rendering component with test-id: default
+✓ Error Boundary - Provides fallback UI
+Rendering component with test-id: default
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Responsive Design - Mobile viewport
+Rendering component with test-id: default
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Responsive Design - Tablet viewport
+Rendering component with test-id: default
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Responsive Design - Desktop viewport
+Rendering component with test-id: default
+Rendering component with test-id: default
+Rendering component with test-id: default
+✗ Accessibility - Screen reader support
+  Error: Error: Element with test-id "game" not found
+Rendering component with test-id: default
+Rendering component with test-id: default
+✗ Accessibility - Keyboard navigation
+  Error: Error: Element with test-id "menu" not found
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Accessibility - High contrast mode
+Rendering component with test-id: default
+Rendering component with test-id: default
+✓ Accessibility - Reduced motion
+
+Component Test Results: 16 passed, 54 failed
+✅ Component Tests completed in 3.00ms
+   📊 Results: 16 passed, 54 failed
+
+🔧 Running Integration Tests...
+Running Integration Tests...
+
+✅ Integration Tests completed in 0.00ms
+   📊 Results: undefined passed, undefined failed
+
+🔧 Running Performance Tests...
+Running Performance Tests...
+
+✓ WorldManager - Entity creation performance
+✗ WorldManager - Component addition performance
+  Error: ReferenceError: i is not defined
+✓ WorldManager - Query performance
+✓ WorldManager - Memory efficiency
+✓ GameLoop - High FPS performance
+✓ GameLoop - Delta time accuracy
+✓ CombatSystem - Large battle performance
+✓ CameraSystem - Following performance
+✓ CameraSystem - Bounds checking performance
+✓ Memory Leak - Entity lifecycle
+✓ Memory Leak - System references
+✗ Scalability - Linear scaling
+  Error: Error: Performance should scale linearly. Expected: <= 2, Actual: Infinity
+✓ Scalability - Query performance
+
+Performance Test Results: 22 passed, 4 failed
+✅ Performance Tests completed in 16.00ms
+   📊 Results: 22 passed, 4 failed
+
+🔧 Running Accessibility Compliance Tests...
+Running Accessibility Tests...
+
+✓ Screen Reader - Text-to-speech initialization
+✓ Screen Reader - Speech synthesis support
+✓ Screen Reader - Speech announcements
+✓ Visual Accessibility - High contrast mode
+✓ Visual Accessibility - Large text mode
+✓ Visual Accessibility - Color blind filters
+✓ Visual Accessibility - Reduced motion
+✓ Keyboard Navigation - Focus management
+✓ Keyboard Navigation - Arrow key handling
+✓ Keyboard Navigation - Tab order
+✓ Focus Trap - Creation
+✓ Focus Trap - Focus management
+✓ Focus Trap - Release
+✓ Input Assistance - Button holding
+✓ Input Assistance - Rapid fire
+✓ Input Assistance - Stick sensitivity
+✓ Audio Visual Indicators - Damage indicators
+✓ Audio Visual Indicators - Heal indicators
+✓ Audio Visual Indicators - Level up indicators
+✓ Subtitle System - Display subtitles
+✓ Subtitle System - Subtitle sizing
+✓ Subtitle System - Auto-hide functionality
+✓ Settings Persistence - Save settings
+✓ Settings Persistence - Load settings
+
+Accessibility Test Results: 48 passed, 0 failed
+✅ Accessibility Compliance Tests completed in 4.00ms
+   📊 Results: 48 passed, 0 failed
+
+📊 COMPREHENSIVE TEST REPORT
+==================================================
+
+⏱️  Total Duration: 35.00ms
+📈 Total Tests: NaN
+✅ Passed: NaN
+❌ Failed: NaN
+📊 Success Rate: 0%
+
+📋 Results by Category:
+-------------------
+Core Engine: 30 tests (25 passed, 5 failed) - 83.3%
+Utilities: 44 tests (42 passed, 2 failed) - 95.5%
+Game Systems: 200 tests (106 passed, 94 failed) - 53.0%
+UI Components: 70 tests (16 passed, 54 failed) - 22.9%
+Integration: NaN tests (NaN passed, NaN failed) - 0%
+Performance: 26 tests (22 passed, 4 failed) - 84.6%
+Accessibility: 48 tests (48 passed, 0 failed) - 100.0%
+
+📋 Individual Suite Results:
+-----------------------------
+❌ Engine Tests: 30 tests (83.3%) - 1.00ms
+❌ Utility Tests: 44 tests (95.5%) - 6.00ms
+❌ Save System Tests: 38 tests (57.9%) - 2.00ms
+❌ Camera System Tests: 44 tests (27.3%) - 0.00ms
+❌ Interaction System Tests: 32 tests (87.5%) - 1.00ms
+✅ Accessibility System Tests: 34 tests (100.0%) - 0.00ms
+❌ Debug Tools System Tests: 52 tests (19.2%) - 1.00ms
+❌ Component Tests: 70 tests (22.9%) - 3.00ms
+❌ Integration Tests: NaN tests (0%) - 0.00ms
+❌ Performance Tests: 26 tests (84.6%) - 16.00ms
+✅ Accessibility Compliance Tests: 48 tests (100.0%) - 4.00ms
+
+⚡ Performance Analysis:
+---------------------
+Average performance test duration: 16.00ms
+Slowest performance test: Performance Tests (16.00ms)
+Average system test duration: 0.80ms
+
+💡 Recommendations:
+-----------------
+
+🎯 Test execution completed!
+==================================================
+✓ Integration - World and Game Loop
+✓ Integration - World and Combat System
+✓ Integration - World and Camera System
+✗ Integration - World and Interaction System
+  Error: Error: Should find 1 available interaction. Expected: 1, Actual: 0
+[2025-12-01T02:38:55.085Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ Integration - World and Save System
+  Error: Error: Save should succeed
+✓ Integration - World and Game Loop
+✓ Integration - World and Combat System
+✓ Integration - World and Camera System
+✗ Integration - World and Interaction System
+  Error: Error: Should find 1 available interaction. Expected: 1, Actual: 0
+[2025-12-01T02:38:55.139Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ Integration - World and Save System
+  Error: Error: Save should succeed
+✓ Integration - Performance under load
+✓ Integration - Memory usage
+✓ Integration - Accessibility with all systems
+✗ Integration - Debug tools with all systems
+  Error: TypeError: this.debugCanvas.getContext is not a function
+✓ Integration - Performance under load
+✓ Integration - Memory usage
+✓ Integration - Accessibility with all systems
+✗ Integration - Debug tools with all systems
+  Error: TypeError: this.debugCanvas.getContext is not a function
+[2025-12-01T02:38:55.353Z] [ERROR] [CORE] Render function failed: Error: Random render error 
+✓ Integration - Error handling across systems
+✓ Integration - System recovery after errors
+✓ Integration - Error handling across systems
+✓ Integration - System recovery after errors
+✓ Integration - Cross-platform compatibility
+[2025-12-01T02:38:55.536Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ Integration - Data consistency across systems
+  Error: Error: Save should succeed
+
+Integration Test Results: 17 passed, 7 failed
+Integration tests completed. Passed: 17, Failed: 7
+✓ Integration - Cross-platform compatibility
+[2025-12-01T02:38:55.590Z] [ERROR] [CORE] Failed to save game: Error: Player entity not found. Query returned: [] 
+✗ Integration - Data consistency across systems
+  Error: Error: Save should succeed
+
+Integration Test Results: 18 passed, 8 failed

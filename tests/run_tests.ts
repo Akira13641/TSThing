@@ -122,7 +122,7 @@ class UnifiedTestRunner {
   /**
    * Runs all test suites and generates comprehensive report
    */
-  public runAll(): void {
+  public async runAll(): Promise<void> {
     console.log('🧪 Aetherial Vanguard - Unified Test Runner');
     console.log('==================================================');
     console.log('');
@@ -131,7 +131,7 @@ class UnifiedTestRunner {
     
     // Run each test suite
     for (const suite of this.testSuites) {
-      this.runTestSuite(suite);
+      await this.runTestSuite(suite);
     }
     
     // Generate final report
@@ -142,7 +142,7 @@ class UnifiedTestRunner {
    * Runs a single test suite
    * @param suite - Test suite to run
    */
-  private runTestSuite(suite: TestSuite): void {
+  private async runTestSuite(suite: TestSuite): Promise<void> {
     console.log(`🔧 Running ${suite.name}...`);
     
     const suiteStartTime = performance.now();
@@ -152,7 +152,7 @@ class UnifiedTestRunner {
     
     try {
       // Run the test suite and get results
-      const result = suite.runner.run();
+      const result = await suite.runner.run();
       passed = result.passed;
       failed = result.failed;
       
@@ -319,7 +319,7 @@ class UnifiedTestRunner {
    * Runs a specific test suite
    * @param suiteName - Name of suite to run
    */
-  public runSuite(suiteName: string): void {
+  public async runSuite(suiteName: string): Promise<void> {
     const suite = this.testSuites.find(s => s.name.toLowerCase().includes(suiteName.toLowerCase()));
     
     if (suite) {
@@ -327,7 +327,7 @@ class UnifiedTestRunner {
       console.log('==================================================');
       console.log('');
       
-      this.runTestSuite(suite);
+      await this.runTestSuite(suite);
       
       console.log('');
       console.log('🎯 Single test suite completed!');
@@ -360,13 +360,20 @@ class UnifiedTestRunner {
 const args = process.argv.slice(2);
 const runner = new UnifiedTestRunner();
 
-if (args.length === 0) {
-  // Run all tests
-  runner.runAll();
-} else {
-  // Run specific suite
-  const suiteName = args[0];
-  runner.runSuite(suiteName);
+async function main() {
+  if (args.length === 0) {
+    // Run all tests
+    await runner.runAll();
+  } else {
+    // Run specific suite
+    const suiteName = args[0];
+    await runner.runSuite(suiteName);
+  }
 }
+
+main().catch(error => {
+  console.error('Test runner failed:', error);
+  process.exit(1);
+});
 
 export { UnifiedTestRunner };

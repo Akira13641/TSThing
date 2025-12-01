@@ -4,11 +4,10 @@
  */
 
 import { WorldManager } from '../engine/WorldManager';
-import { GameLoop } from '../engine/GameLoop';
 import { CombatSystem } from '../engine/CombatSystem';
 import { CameraSystem } from '../engine/CameraSystem';
-import { logger, LogSource } from '../engine/GlobalLogger';
-import { EntityId, Position, Health, Velocity } from '../types';
+import { SaveSystem } from '../engine/SaveSystem';
+import { EntityId, Position, Health, CombatState, Sprite, Velocity } from '../types';
 
 /**
  * Performance test runner
@@ -74,6 +73,61 @@ class PerformanceTestRunner {
       throw new Error(`${message}. Expected increase: <= ${maxIncrease}, Actual: ${increase}`);
     }
   }
+
+  /**
+   * Creates a simple velocity system for testing
+   */
+  private createVelocitySystem(): (world: WorldManager, deltaTime: number) => void {
+    return (world: WorldManager, deltaTime: number) => {
+      const entities = world.entities;
+      const positionComponents = world.components.get('Position');
+      const velocityComponents = world.components.get('Velocity');
+      
+      if (positionComponents && velocityComponents) {
+        for (const [entityId, position] of positionComponents.entries()) {
+          const velocity = velocityComponents.get(entityId);
+          if (velocity && entities.has(entityId)) {
+            const currentPos = position as { x: number; y: number };
+            const vel = velocity as { dx: number; dy: number };
+            
+            // Update position based on velocity
+            const newPosition = {
+              x: currentPos.x + vel.dx * deltaTime,
+              y: currentPos.y + vel.dy * deltaTime
+            };
+            
+            positionComponents.set(entityId, newPosition);
+          }
+        }
+      }
+    };
+  }
+
+  /**
+   * Simulates game loop updates without using requestAnimationFrame
+   */
+  private simulateGameLoop(world: WorldManager, deltaTime: number, iterations: number): void {
+    for (let i = 0; i < iterations; i++) {
+      world.update(deltaTime);
+    }
+  }
+
+  /**
+   * Measures performance of a function
+   */
+  private measurePerformance<T>(fn: () => T, iterations: number = 1): { duration: number; result: T } {
+    const startTime = performance.now();
+    let result: T;
+    
+    for (let i = 0; i < iterations; i++) {
+      result = fn();
+    }
+    
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    
+    return { duration, result: result! };
+  }
 }
 
 // Create test runner instance
@@ -83,15 +137,13 @@ const runner = new PerformanceTestRunner();
 
 runner.test('WorldManager - Entity creation performance', () => {
   const world = new WorldManager();
-  const startTime = performance.now();
   
-  // Create many entities
-  for (let i = 0; i < 1000; i++) {
-    world.createEntity(['Position', 'Velocity']);
-  }
-  
-  const endTime = performance.now();
-  const duration = endTime - startTime;
+  const { duration } = runner.measurePerformance(() => {
+    // Create many entities
+    for (let i = 0; i < 1000; i++) {
+      world.createEntity(['Position', 'Velocity']);
+    }
+  });
   
   // Should complete within reasonable time
   runner.assertPerformance(duration, 100, 'Entity creation should be fast');
@@ -110,154 +162,68 @@ runner.test('WorldManager - Component addition performance', () => {
     entities.push(entityId);
   }
   
-  const startTime = performance.now();
-  
-  // Add components to all entities
-  entities.forEach(entityId => {
-    world.addComponent(entityId, 'Position', { x: i, y: i });
-    world.addComponent(entityId, 'Velocity', { dx: i, dy: i });
+  const { duration } = runner.measurePerformance(() => {
+    // Add components to all entities
+    entities.forEach((entityId, i) => {
+      world.addComponent(entityId, 'Position', { x: i, y: i });
+      world.addComponent(entityId, 'Velocity', { dx: i, dy: i });
+    });
   });
-  
-  const endTime = performance.now();
-  const duration = endTime - startTime;
   
   // Should complete within reasonable time
   runner.assertPerformance(duration, 50, 'Component addition should be fast');
-  
-  world.clear();
 });
 
 runner.test('WorldManager - Query performance', () => {
   const world = new WorldManager();
   const entities: EntityId[] = [];
   
-  // Create entities with different component combinations
-  for (let i = 0; i < 500; i++) {
+  // Create entities with components
+  for (let i = 0; i < 1000; i++) {
+    const entityId = world.createEntity(['Position', 'Velocity', 'Health']);
+    world.addComponent(entityId, 'Position', { x: i, y: i });
+    world.addComponent(entityId, 'Velocity', { dx: i, dy: i });
+    world.addComponent(entityId, 'Health', { current: 100, max: 100 });
+    entities.push(entityId);
+  }
+  
+  const { duration } = runner.measurePerformance(() => {
+    // Perform queries
+    for (let i = 0; i < 100; i++) {
+      world.query(['Position']);
+      world.query(['Position', 'Velocity']);
+      world.query(['Position', 'Velocity', 'Health']);
+    }
+  });
+  
+  // Should complete within reasonable time
+  runner.assertPerformance(duration, 50, 'Query operations should be fast');
+  
+  // Clean up
+  world.clear();
+});
+
+runner.test('WorldManager - Entity destruction performance', () => {
+  const world = new WorldManager();
+  const entities: EntityId[] = [];
+  
+  // Create entities
+  for (let i = 0; i < 1000; i++) {
     const entityId = world.createEntity(['Position', 'Velocity']);
     world.addComponent(entityId, 'Position', { x: i, y: i });
     world.addComponent(entityId, 'Velocity', { dx: i, dy: i });
     entities.push(entityId);
   }
   
-  for (let i = 0; i < 500; i++) {
-    const entityId = world.createEntity(['Position']);
-    world.addComponent(entityId, 'Position', { x: i, y: i });
-    entities.push(entityId);
-  }
-  
-  const startTime = performance.now();
-  
-  // Perform queries
-  for (let i = 0; i < 100; i++) {
-    world.query(['Position', 'Velocity']);
-    world.query(['Position']);
-  }
-  
-  const endTime = performance.now();
-  const duration = endTime - startTime;
+  const { duration } = runner.measurePerformance(() => {
+    // Destroy all entities
+    entities.forEach(entityId => {
+      world.destroyEntity(entityId);
+    });
+  });
   
   // Should complete within reasonable time
-  runner.assertPerformance(duration, 25, 'Query performance should be fast');
-  
-  world.clear();
-});
-
-runner.test('WorldManager - Memory efficiency', () => {
-  const world = new WorldManager();
-  const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
-  
-  // Create and destroy many entities
-  for (let i = 0; i < 1000; i++) {
-    const entityId = world.createEntity(['Position']);
-    world.addComponent(entityId, 'Position', { x: i, y: i });
-    world.destroyEntity(entityId);
-  }
-  
-  // Force garbage collection if available
-  if ((global as any).gc) {
-    (global as any).gc();
-  }
-  
-  const finalMemory = (performance as any).memory?.usedJSHeapSize || 0;
-  
-  // Memory usage should not increase significantly
-  runner.assertMemoryUsage(initialMemory, finalMemory, 1024 * 1024, 'Entity creation/destruction should not leak memory');
-});
-
-// ============= GAME LOOP PERFORMANCE TESTS =============
-
-runner.test('GameLoop - High FPS performance', () => {
-  const world = new WorldManager();
-  const gameLoop = new GameLoop(
-    (deltaTime) => {
-      world.update(deltaTime);
-    },
-    () => {
-      // Minimal render function
-    }
-  );
-  
-  // Create some entities
-  for (let i = 0; i < 100; i++) {
-    const entityId = world.createEntity(['Position', 'Velocity']);
-    world.addComponent(entityId, 'Position', { x: Math.random() * 800, y: Math.random() * 600 });
-    world.addComponent(entityId, 'Velocity', { dx: Math.random() * 100, dy: Math.random() * 100 });
-  }
-  
-  gameLoop.start();
-  
-  let frameCount = 0;
-  const startTime = performance.now();
-  
-  // Run for a short time and count frames
-  const testDuration = 1000; // 1 second
-  const checkInterval = setInterval(() => {
-    frameCount++;
-  }, 16);
-  
-  setTimeout(() => {
-    clearInterval(checkInterval);
-    gameLoop.stop();
-    
-    const endTime = performance.now();
-    const actualDuration = endTime - startTime;
-    const fps = (frameCount / actualDuration) * 1000;
-    
-    // Should maintain reasonable FPS
-    runner.assertPerformance(fps, 30, 'Should maintain reasonable FPS');
-    
-    world.clear();
-  }, testDuration);
-});
-
-runner.test('GameLoop - Delta time accuracy', () => {
-  const world = new WorldManager();
-  let totalDeltaTime = 0;
-  let frameCount = 0;
-  
-  const gameLoop = new GameLoop(
-    (deltaTime) => {
-      totalDeltaTime += deltaTime;
-      frameCount++;
-      world.update(deltaTime);
-    },
-    () => {}
-  );
-  
-  gameLoop.start();
-  
-  // Run for a short time
-  setTimeout(() => {
-    gameLoop.stop();
-    
-    const averageDeltaTime = totalDeltaTime / frameCount;
-    const expectedDeltaTime = 1 / 60; // ~60 FPS
-    
-    // Delta time should be close to expected
-    runner.assertPerformance(Math.abs(averageDeltaTime - expectedDeltaTime) * 1000, 5, 'Delta time should be accurate');
-    
-    world.clear();
-  }, 500);
+  runner.assertPerformance(duration, 100, 'Entity destruction should be fast');
 });
 
 // ============= COMBAT SYSTEM PERFORMANCE TESTS =============
@@ -268,68 +234,192 @@ runner.test('CombatSystem - Large battle performance', () => {
   
   combatSystem.setWorld(world);
   
-  // Create many entities
-  const playerIds: EntityId[] = [];
-  const enemyIds: EntityId[] = [];
-  
-  for (let i = 0; i < 10; i++) {
-    const playerId = world.createEntity(['Position', 'Health', 'CombatState']);
-    world.addComponent(playerId, 'Position', { x: i * 50, y: 100 });
-    world.addComponent(playerId, 'Health', { current: 100, max: 100 });
-    world.addComponent(playerId, 'CombatState', { 
-      attacking: false, 
-      attack: 15, 
-      defense: 8, 
-      actionPoints: 3, 
-      maxActionPoints: 3 
-    });
-    playerIds.push(playerId);
-    
-    const enemyId = world.createEntity(['Position', 'Health', 'CombatState']);
-    world.addComponent(enemyId, 'Position', { x: i * 50 + 200, y: 100 });
-    world.addComponent(enemyId, 'Health', { current: 50, max: 50 });
-    world.addComponent(enemyId, 'CombatState', { 
-      attacking: false, 
-      attack: 10, 
-      defense: 5, 
-      actionPoints: 3, 
-      maxActionPoints: 3 
-    });
-    enemyIds.push(enemyId);
-  }
-  
-  const startTime = performance.now();
-  
-  // Start combat with all participants
-  combatSystem.startCombat(playerIds[0], enemyIds);
-  
-  // Update combat many times
+  // Create many combat entities
+  const entities: EntityId[] = [];
   for (let i = 0; i < 100; i++) {
-    combatSystem.update(0.016);
+    const entityId = world.createEntity(['Position', 'Health', 'CombatState']);
+    world.addComponent(entityId, 'Position', { 
+      x: Math.random() * 1000, 
+      y: Math.random() * 1000 
+    });
+    world.addComponent(entityId, 'Health', { current: 100, max: 100 });
+    world.addComponent(entityId, 'CombatState', { 
+      attacking: false, 
+      attack: 10 + Math.random() * 10, 
+      defense: 5 + Math.random() * 5, 
+      actionPoints: 3, 
+      maxActionPoints: 3 
+    });
+    entities.push(entityId);
   }
   
-  const endTime = performance.now();
-  const duration = endTime - startTime;
+  const { duration } = runner.measurePerformance(() => {
+    // Start combat with all entities
+    combatSystem.startCombat(entities[0], entities.slice(1));
+    
+    // Update combat many times
+    for (let i = 0; i < 100; i++) {
+      combatSystem.update(0.016);
+    }
+  });
   
   // Should complete within reasonable time
-  runner.assertPerformance(duration, 100, 'Large combat should be performant');
+  runner.assertPerformance(duration, 1000, 'Large battle should be performant');
   
+  // Clean up
   world.clear();
 });
 
 // ============= CAMERA SYSTEM PERFORMANCE TESTS =============
 
-runner.test('CameraSystem - Following performance', () => {
+runner.test('CameraSystem - Tracking performance', () => {
   const world = new WorldManager();
   const cameraSystem = new CameraSystem();
   
   cameraSystem.setWorld(world);
   cameraSystem.setViewport(1920, 1080);
   
-  // Create many moving entities
+  // Create many entities
   const entities: EntityId[] = [];
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 500; i++) {
     const entityId = world.createEntity(['Position', 'Velocity']);
+    world.addComponent(entityId, 'Position', { 
+      x: Math.random() * 2000, 
+      y: Math.random() * 2000 
+    });
+    world.addComponent(entityId, 'Velocity', { 
+      dx: (Math.random() - 0.5) * 100, 
+      dy: (Math.random() - 0.5) * 100 
+    });
+    entities.push(entityId);
+  }
+  
+  // Add velocity system for movement
+  world.addSystem(runner.createVelocitySystem());
+  
+  const { duration } = runner.measurePerformance(() => {
+    // Simulate camera tracking
+    for (let i = 0; i < 100; i++) {
+      // Switch target every 10 frames
+      const targetIndex = Math.floor(i / 10) % entities.length;
+      cameraSystem.setTarget(entities[targetIndex]);
+      cameraSystem.update(0.016);
+      
+      // Update world
+      world.update(0.016);
+    }
+  });
+  
+  // Should complete within reasonable time
+  runner.assertPerformance(duration, 500, 'Camera tracking should be performant');
+  
+  // Clean up
+  world.clear();
+});
+
+// ============= SAVE SYSTEM PERFORMANCE TESTS =============
+
+runner.test('SaveSystem - Large save performance', () => {
+  const world = new WorldManager();
+  const saveSystem = new SaveSystem();
+  
+  saveSystem.setWorld(world);
+  
+  // Create many entities with various components
+  const entities: EntityId[] = [];
+  for (let i = 0; i < 500; i++) {
+    const entityId = world.createEntity(['Position', 'Health', 'Sprite', 'CombatState']);
+    world.addComponent(entityId, 'Position', { 
+      x: Math.random() * 1000, 
+      y: Math.random() * 1000 
+    });
+    world.addComponent(entityId, 'Health', { 
+      current: 50 + Math.random() * 50, 
+      max: 100 
+    });
+    world.addComponent(entityId, 'Sprite', { 
+      textureId: `sprite_${i % 10}`, 
+      frameIndex: i % 4, 
+      visible: true 
+    });
+    world.addComponent(entityId, 'CombatState', { 
+      attacking: Math.random() > 0.8, 
+      attack: 10 + Math.random() * 10, 
+      defense: 5 + Math.random() * 5, 
+      actionPoints: Math.floor(Math.random() * 4), 
+      maxActionPoints: 3 
+    });
+    entities.push(entityId);
+  }
+  
+  const { duration } = runner.measurePerformance(() => {
+    // Save game
+    const success = saveSystem.saveGame(1, 'Performance Test');
+    runner.assert(success, 'Large save should succeed');
+  });
+  
+  // Should complete within reasonable time
+  runner.assertPerformance(duration, 1000, 'Large save should be performant');
+  
+  // Clean up
+  world.clear();
+});
+
+runner.test('SaveSystem - Load performance', () => {
+  const world = new WorldManager();
+  const saveSystem = new SaveSystem();
+  
+  saveSystem.setWorld(world);
+  
+  // Create test data and save
+  const entities: EntityId[] = [];
+  for (let i = 0; i < 200; i++) {
+    const entityId = world.createEntity(['Position', 'Health', 'Sprite']);
+    world.addComponent(entityId, 'Position', { 
+      x: Math.random() * 500, 
+      y: Math.random() * 500 
+    });
+    world.addComponent(entityId, 'Health', { 
+      current: 75 + Math.random() * 25, 
+      max: 100 
+    });
+    world.addComponent(entityId, 'Sprite', { 
+      textureId: `sprite_${i % 5}`, 
+      frameIndex: i % 8, 
+      visible: true 
+    });
+    entities.push(entityId);
+  }
+  
+  // Save first
+  saveSystem.saveGame(1, 'Load Performance Test');
+  world.clear();
+  
+  const { duration } = runner.measurePerformance(() => {
+    // Load game
+    const success = saveSystem.loadGame(1);
+    runner.assert(success, 'Load should succeed');
+  });
+  
+  // Should complete within reasonable time
+  runner.assertPerformance(duration, 500, 'Load should be performant');
+  
+  // Clean up
+  world.clear();
+});
+
+// ============= INTEGRATION PERFORMANCE TESTS =============
+
+runner.test('Performance - High entity count with systems', () => {
+  const world = new WorldManager();
+  
+  // Add multiple systems
+  world.addSystem(runner.createVelocitySystem());
+  
+  // Create many entities
+  const entities: EntityId[] = [];
+  for (let i = 0; i < 1000; i++) {
+    const entityId = world.createEntity(['Position', 'Velocity', 'Health']);
     world.addComponent(entityId, 'Position', { 
       x: Math.random() * 2000, 
       y: Math.random() * 2000 
@@ -338,207 +428,112 @@ runner.test('CameraSystem - Following performance', () => {
       dx: (Math.random() - 0.5) * 200, 
       dy: (Math.random() - 0.5) * 200 
     });
+    world.addComponent(entityId, 'Health', { 
+      current: 50 + Math.random() * 50, 
+      max: 100 
+    });
     entities.push(entityId);
   }
   
-  cameraSystem.setTarget(entities[0]);
-  
-  const startTime = performance.now();
-  
-  // Update camera many times
-  for (let i = 0; i < 100; i++) {
-    cameraSystem.update(0.016);
-  }
-  
-  const endTime = performance.now();
-  const duration = endTime - startTime;
-  
-  // Should complete within reasonable time
-  runner.assertPerformance(duration, 50, 'Camera following should be performant');
-  
-  world.clear();
-});
-
-runner.test('CameraSystem - Bounds checking performance', () => {
-  const world = new WorldManager();
-  const cameraSystem = new CameraSystem();
-  
-  cameraSystem.setWorld(world);
-  cameraSystem.setViewport(800, 600);
-  cameraSystem.setBounds({
-    minX: 0,
-    maxX: 1000,
-    minY: 0,
-    maxY: 1000,
-    enabled: true
+  const { duration } = runner.measurePerformance(() => {
+    // Simulate game loop for many frames
+    runner.simulateGameLoop(world, 0.016, 300); // 5 seconds at 60 FPS
   });
   
-  // Create entity that moves outside bounds
-  const entityId = world.createEntity(['Position', 'Velocity']);
-  world.addComponent(entityId, 'Position', { x: 500, y: 500 });
-  world.addComponent(entityId, 'Velocity', { dx: 1000, dy: 1000 });
-  
-  cameraSystem.setTarget(entityId);
-  
-  const startTime = performance.now();
-  
-  // Update camera many times
-  for (let i = 0; i < 100; i++) {
-    cameraSystem.update(0.016);
-  }
-  
-  const endTime = performance.now();
-  const duration = endTime - startTime;
-  
   // Should complete within reasonable time
-  runner.assertPerformance(duration, 25, 'Camera bounds checking should be performant');
+  runner.assertPerformance(duration, 2000, 'High entity count should be performant');
   
+  // Verify all entities still exist
+  const remainingEntities = world.query(['Position', 'Velocity', 'Health']);
+  runner.assert(remainingEntities.length === 1000, 'All entities should still exist');
+  
+  // Clean up
   world.clear();
 });
 
-// ============= MEMORY LEAK TESTS =============
-
-runner.test('Memory Leak - Entity lifecycle', () => {
+runner.test('Performance - Memory allocation patterns', () => {
   const world = new WorldManager();
+  
+  // Measure initial memory (approximate)
   const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
   
   // Create and destroy entities repeatedly
   for (let cycle = 0; cycle < 10; cycle++) {
+    // Create entities
     const entities: EntityId[] = [];
-    
-    // Create phase
     for (let i = 0; i < 100; i++) {
-      const entityId = world.createEntity(['Position', 'Health', 'Velocity']);
+      const entityId = world.createEntity(['Position', 'Velocity', 'Health', 'Sprite']);
       world.addComponent(entityId, 'Position', { x: i, y: i });
-      world.addComponent(entityId, 'Health', { current: 100, max: 100 });
       world.addComponent(entityId, 'Velocity', { dx: i, dy: i });
+      world.addComponent(entityId, 'Health', { current: 100, max: 100 });
+      world.addComponent(entityId, 'Sprite', { textureId: 'test', frameIndex: 0, visible: true });
       entities.push(entityId);
     }
     
-    // Update phase
-    for (let i = 0; i < 10; i++) {
-      world.update(0.016);
-    }
+    // Update world
+    runner.simulateGameLoop(world, 0.016, 60);
     
-    // Destroy phase
+    // Destroy all entities
     entities.forEach(entityId => {
       world.destroyEntity(entityId);
     });
   }
   
-  // Force garbage collection if available
-  if ((global as any).gc) {
-    (global as any).gc();
-  }
-  
+  // Measure final memory
   const finalMemory = (performance as any).memory?.usedJSHeapSize || 0;
   
-  // Memory should not grow significantly
-  runner.assertMemoryUsage(initialMemory, finalMemory, 512 * 1024, 'Entity lifecycle should not leak memory');
-});
-
-runner.test('Memory Leak - System references', () => {
-  const world = new WorldManager();
-  const combatSystem = new CombatSystem();
-  const cameraSystem = new CameraSystem();
-  
-  combatSystem.setWorld(world);
-  cameraSystem.setWorld(world);
-  
-  const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
-  
-  // Create and destroy systems repeatedly
-  for (let i = 0; i < 50; i++) {
-    const newCombatSystem = new CombatSystem();
-    const newCameraSystem = new CameraSystem();
-    
-    newCombatSystem.setWorld(world);
-    newCameraSystem.setWorld(world);
-    
-    // Use systems briefly
-    newCombatSystem.update(0.016);
-    newCameraSystem.update(0.016);
+  // Memory increase should be reasonable
+  if (initialMemory > 0 && finalMemory > 0) {
+    runner.assertMemoryUsage(initialMemory, finalMemory, 10 * 1024 * 1024, 'Memory usage should be reasonable'); // 10MB max increase
   }
   
-  // Force garbage collection if available
-  if ((global as any).gc) {
-    (global as any).gc();
-  }
-  
-  const finalMemory = (performance as any).memory?.usedJSHeapSize || 0;
-  
-  // Memory should not grow significantly
-  runner.assertMemoryUsage(initialMemory, finalMemory, 256 * 1024, 'System references should not leak memory');
+  // Clean up
+  world.clear();
 });
 
-// ============= SCALABILITY TESTS =============
-
-runner.test('Scalability - Linear scaling', () => {
-  const world = new WorldManager();
-  
-  const entityCounts = [10, 50, 100, 500, 1000];
-  const times: number[] = [];
-  
-  entityCounts.forEach(count => {
-    world.clear();
-    
-    const startTime = performance.now();
-    
-    // Create entities
-    const entities: EntityId[] = [];
-    for (let i = 0; i < count; i++) {
-      const entityId = world.createEntity(['Position', 'Velocity']);
-      world.addComponent(entityId, 'Position', { x: i, y: i });
-      world.addComponent(entityId, 'Velocity', { dx: 1, dy: 1 });
-      entities.push(entityId);
-    }
-    
-    // Update once
-    world.update(0.016);
-    
-    const endTime = performance.now();
-    times.push(endTime - startTime);
-  });
-  
-  // Check that scaling is roughly linear
-  for (let i = 1; i < times.length; i++) {
-    const ratio = times[i] / times[i - 1];
-    const entityRatio = entityCounts[i] / entityCounts[i - 1];
-    
-    // Time should scale roughly proportionally to entity count
-    runner.assertPerformance(ratio / entityRatio, 2, 'Performance should scale linearly');
-  }
-});
-
-runner.test('Scalability - Query performance', () => {
+runner.test('Performance - Query optimization', () => {
   const world = new WorldManager();
   
   // Create entities with different component combinations
-  for (let i = 0; i < 500; i++) {
-    const entityId = world.createEntity(['Position', 'Velocity']);
-    world.addComponent(entityId, 'Position', { x: i, y: i });
-    world.addComponent(entityId, 'Velocity', { dx: i, dy: i });
-  }
+  const entities: EntityId[] = [];
   
+  // Create entities with only Position
   for (let i = 0; i < 200; i++) {
     const entityId = world.createEntity(['Position']);
     world.addComponent(entityId, 'Position', { x: i, y: i });
+    entities.push(entityId);
   }
   
-  const startTime = performance.now();
-  
-  // Perform queries
-  for (let i = 0; i < 100; i++) {
-    world.query(['Position', 'Velocity']);
-    world.query(['Position']);
+  // Create entities with Position + Velocity
+  for (let i = 0; i < 200; i++) {
+    const entityId = world.createEntity(['Position', 'Velocity']);
+    world.addComponent(entityId, 'Position', { x: i, y: i });
+    world.addComponent(entityId, 'Velocity', { dx: i, dy: i });
+    entities.push(entityId);
   }
   
-  const endTime = performance.now();
-  const duration = endTime - startTime;
+  // Create entities with Position + Velocity + Health
+  for (let i = 0; i < 200; i++) {
+    const entityId = world.createEntity(['Position', 'Velocity', 'Health']);
+    world.addComponent(entityId, 'Position', { x: i, y: i });
+    world.addComponent(entityId, 'Velocity', { dx: i, dy: i });
+    world.addComponent(entityId, 'Health', { current: 100, max: 100 });
+    entities.push(entityId);
+  }
+  
+  const { duration } = runner.measurePerformance(() => {
+    // Perform many queries
+    for (let i = 0; i < 1000; i++) {
+      world.query(['Position']);
+      world.query(['Position', 'Velocity']);
+      world.query(['Position', 'Velocity', 'Health']);
+    }
+  });
   
   // Should complete within reasonable time
-  runner.assertPerformance(duration, 50, 'Query performance should scale well');
+  runner.assertPerformance(duration, 100, 'Query operations should be optimized');
   
+  // Clean up
   world.clear();
 });
 

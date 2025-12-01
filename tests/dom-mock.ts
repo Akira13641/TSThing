@@ -69,6 +69,7 @@ interface MockDocument {
   activeElement: MockHTMLElement | null;
   readyState: string;
   location: Location;
+  hidden: boolean; // Add hidden property for visibility API
   
   createElement(tagName: string): MockHTMLElement;
   createElementNS(namespace: string, tagName: string): MockHTMLElement;
@@ -538,6 +539,7 @@ class MockDocumentImpl implements MockDocument {
   public readyState: string = 'complete';
   public location: Location;
   public eventListeners: Record<string, Function[]> = {};
+  public hidden: boolean = false; // Add hidden property for visibility API
 
   constructor() {
     this.documentElement = new MockHTMLElementImpl('HTML');
@@ -776,7 +778,7 @@ class MockWindowImpl implements MockWindow {
     // Simulate animation frame
     setTimeout(() => {
       if (this.animationFrameCallbacks.has(id)) {
-        callback(performance.now());
+        callback(Date.now()); // Use Date.now() instead of performance.now()
         this.animationFrameCallbacks.delete(id);
       }
     }, 16);
@@ -873,13 +875,7 @@ export function setupDOMMock(): void {
   (globalThis as any).HTMLTitleElement = MockHTMLElementImpl;
   (globalThis as any).SpeechSynthesisUtterance = MockSpeechSynthesisUtterance;
   
-  // Set up global functions
-  (globalThis as any).requestAnimationFrame = (callback: FrameRequestCallback) => 
-    mockWindow.requestAnimationFrame(callback);
-  (globalThis as any).cancelAnimationFrame = (id: number) => 
-    mockWindow.cancelAnimationFrame(id);
-  
-  // Set up performance API
+  // Set up performance API first (needed by requestAnimationFrame)
   (globalThis as any).performance = {
     now: () => Date.now(),
     timing: {
@@ -890,6 +886,18 @@ export function setupDOMMock(): void {
     getEntriesByName: () => [],
     getEntriesByType: () => []
   };
+  
+  // Set up global functions
+  (globalThis as any).requestAnimationFrame = (callback: FrameRequestCallback) => 
+    mockWindow.requestAnimationFrame(callback);
+  (globalThis as any).cancelAnimationFrame = (id: number) => 
+    mockWindow.cancelAnimationFrame(id);
+  
+  // Also set up on global for compatibility
+  (global as any).requestAnimationFrame = (callback: FrameRequestCallback) => 
+    mockWindow.requestAnimationFrame(callback);
+  (global as any).cancelAnimationFrame = (id: number) => 
+    mockWindow.cancelAnimationFrame(id);
   
   // Set up console if not available
   if (!console.warn) {

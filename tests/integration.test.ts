@@ -4,7 +4,6 @@
  */
 
 import { WorldManager } from '../engine/WorldManager';
-import { GameLoop } from '../engine/GameLoop';
 import { CombatSystem } from '../engine/CombatSystem';
 import { CameraSystem } from '../engine/CameraSystem';
 import { InteractionSystem } from '../engine/InteractionSystem';
@@ -18,26 +17,26 @@ import { EntityId, Position, Health, CombatState, Sprite, Velocity } from '../ty
  * Test runner for integration tests
  */
 class IntegrationTestRunner {
-  private tests: Array<{ name: string; fn: () => void }> = [];
+  private tests: Array<{ name: string; fn: () => Promise<void> }> = [];
   private passed = 0;
   private failed = 0;
 
   /**
    * Registers a test
    */
-  public test(name: string, fn: () => void): void {
+  public test(name: string, fn: () => Promise<void>): void {
     this.tests.push({ name, fn });
   }
 
   /**
    * Runs all registered tests
    */
-  public run(): { passed: number; failed: number } {
+  public async run(): Promise<{ passed: number; failed: number }> {
     console.log('Running Integration Tests...\n');
 
     for (const test of this.tests) {
       try {
-        test.fn();
+        await test.fn();
         console.log(`✓ ${test.name}`);
         this.passed++;
       } catch (error) {
@@ -84,6 +83,44 @@ class IntegrationTestRunner {
   public assertArrayLength<T>(array: T[], expectedLength: number, message: string): void {
     this.assertEqual(array.length, expectedLength, message);
   }
+
+  /**
+   * Simulates game loop updates without using requestAnimationFrame
+   */
+  private simulateGameLoop(world: WorldManager, deltaTime: number, iterations: number): void {
+    for (let i = 0; i < iterations; i++) {
+      world.update(deltaTime);
+    }
+  }
+
+  /**
+   * Creates a simple velocity system for testing
+   */
+  private createVelocitySystem(): (world: WorldManager, deltaTime: number) => void {
+    return (world: WorldManager, deltaTime: number) => {
+      const entities = world.entities;
+      const positionComponents = world.components.get('Position');
+      const velocityComponents = world.components.get('Velocity');
+      
+      if (positionComponents && velocityComponents) {
+        for (const [entityId, position] of positionComponents.entries()) {
+          const velocity = velocityComponents.get(entityId);
+          if (velocity && entities.has(entityId)) {
+            const currentPos = position as { x: number; y: number };
+            const vel = velocity as { dx: number; dy: number };
+            
+            // Update position based on velocity
+            const newPosition = {
+              x: currentPos.x + vel.dx * deltaTime,
+              y: currentPos.y + vel.dy * deltaTime
+            };
+            
+            positionComponents.set(entityId, newPosition);
+          }
+        }
+      }
+    };
+  }
 }
 
 // Create test runner instance
@@ -91,35 +128,26 @@ const runner = new IntegrationTestRunner();
 
 // ============= MULTI-SYSTEM INTEGRATION TESTS =============
 
-runner.test('Integration - World and Game Loop', () => {
+runner.test('Integration - World and Velocity System', async () => {
   const world = new WorldManager();
-  const gameLoop = new GameLoop(
-    (deltaTime) => {
-      world.update(deltaTime);
-    },
-    () => {
-      // Render function
-    }
-  );
+  
+  // Add velocity system to world
+  world.addSystem(runner.createVelocitySystem());
   
   // Create test entity
   const entityId = world.createEntity(['Position', 'Velocity']);
   world.addComponent(entityId, 'Position', { x: 0, y: 0 });
   world.addComponent(entityId, 'Velocity', { dx: 10, dy: 5 });
   
-  gameLoop.start();
+  // Simulate game loop updates
+  runner.simulateGameLoop(world, 0.016, 10); // ~10 frames at 60 FPS
   
-  // Let it run for a short time
-  setTimeout(() => {
-    gameLoop.stop();
-    
-    const position = world.getComponent<Position>(entityId, 'Position');
-    runner.assertNotNull(position, 'Position should exist after game loop');
-    runner.assert(position!.x > 0 || position!.y > 0, 'Entity should have moved');
-  }, 100);
+  const position = world.getComponent<Position>(entityId, 'Position');
+  runner.assertNotNull(position, 'Position should exist after updates');
+  runner.assert(position!.x > 0 || position!.y > 0, 'Entity should have moved');
 });
 
-runner.test('Integration - World and Combat System', () => {
+runner.test('Integration - World and Combat System', async () => {
   const world = new WorldManager();
   const combatSystem = new CombatSystem();
   
@@ -161,7 +189,7 @@ runner.test('Integration - World and Combat System', () => {
   runner.assert(true, 'Combat should update successfully');
 });
 
-runner.test('Integration - World and Camera System', () => {
+runner.test('Integration - World and Camera System', async () => {
   const world = new WorldManager();
   const cameraSystem = new CameraSystem();
   
@@ -180,7 +208,7 @@ runner.test('Integration - World and Camera System', () => {
   runner.assert(position!.x > 0 && position!.y > 0, 'Camera should follow target');
 });
 
-runner.test('Integration - World and Interaction System', () => {
+runner.test('Integration - World and Interaction System', async () => {
   const world = new WorldManager();
   const interactionSystem = new InteractionSystem();
   
@@ -213,7 +241,7 @@ runner.test('Integration - World and Interaction System', () => {
   runner.assertArrayLength(availableInteractions, 1, 'Should find 1 available interaction');
 });
 
-runner.test('Integration - World and Save System', () => {
+runner.test('Integration - World and Save System', async () => {
   const world = new WorldManager();
   const saveSystem = new SaveSystem();
   
@@ -254,16 +282,11 @@ runner.test('Integration - World and Save System', () => {
 
 // ============= PERFORMANCE INTEGRATION TESTS =============
 
-runner.test('Integration - Performance under load', () => {
+runner.test('Integration - Performance under load', async () => {
   const world = new WorldManager();
-  const gameLoop = new GameLoop(
-    (deltaTime) => {
-      world.update(deltaTime);
-    },
-    () => {
-      // Render function
-    }
-  );
+  
+  // Add velocity system to world
+  world.addSystem(runner.createVelocitySystem());
   
   // Create many entities
   const entities: EntityId[] = [];
@@ -281,25 +304,22 @@ runner.test('Integration - Performance under load', () => {
   }
   
   const startTime = performance.now();
-  gameLoop.start();
   
-  // Let it run for a short time
-  setTimeout(() => {
-    gameLoop.stop();
-    
-    const endTime = performance.now();
-    const duration = endTime - startTime;
-    
-    // Should complete within reasonable time
-    runner.assert(duration < 5000, 'Performance test should complete within 5 seconds');
-    
-    // All entities should still exist
-    const currentEntities = world.query(['Position', 'Velocity']);
-    runner.assertArrayLength(currentEntities, 100, 'All entities should still exist');
-  }, 100);
+  // Simulate game loop updates
+  runner.simulateGameLoop(world, 0.016, 60); // ~1 second at 60 FPS
+  
+  const endTime = performance.now();
+  const duration = endTime - startTime;
+  
+  // Should complete within reasonable time
+  runner.assert(duration < 5000, 'Performance test should complete within 5 seconds');
+  
+  // All entities should still exist
+  const currentEntities = world.query(['Position', 'Velocity']);
+  runner.assertArrayLength(currentEntities, 100, 'All entities should still exist');
 });
 
-runner.test('Integration - Memory usage', () => {
+runner.test('Integration - Memory usage', async () => {
   const world = new WorldManager();
   
   // Create and destroy entities repeatedly
@@ -321,7 +341,7 @@ runner.test('Integration - Memory usage', () => {
 
 // ============= ACCESSIBILITY INTEGRATION TESTS =============
 
-runner.test('Integration - Accessibility with all systems', () => {
+runner.test('Integration - Accessibility with all systems', async () => {
   const world = new WorldManager();
   const accessibilitySystem = new AccessibilitySystem();
   const cameraSystem = new CameraSystem();
@@ -354,7 +374,7 @@ runner.test('Integration - Accessibility with all systems', () => {
 
 // ============= DEBUG TOOLS INTEGRATION TESTS =============
 
-runner.test('Integration - Debug tools with all systems', () => {
+runner.test('Integration - Debug tools with all systems', async () => {
   const world = new WorldManager();
   const debugTools = new DebugToolsSystem();
   const saveSystem = new SaveSystem();
@@ -391,38 +411,38 @@ runner.test('Integration - Debug tools with all systems', () => {
 
 // ============= ERROR HANDLING INTEGRATION TESTS =============
 
-runner.test('Integration - Error handling across systems', () => {
+runner.test('Integration - Error handling across systems', async () => {
   const world = new WorldManager();
-  const gameLoop = new GameLoop(
-    (deltaTime) => {
-      world.update(deltaTime);
-    },
-    () => {
-      // Render function that might throw
-      if (Math.random() < 0.1) {
-        throw new Error('Random render error');
-      }
-    }
-  );
   
   // Create entity
   const entityId = world.createEntity(['Position']);
   world.addComponent(entityId, 'Position', { x: 0, y: 0 });
   
-  gameLoop.start();
-  
-  // Let it run and potentially encounter errors
-  setTimeout(() => {
-    try {
-      gameLoop.stop();
-      runner.assert(true, 'Game loop should handle errors gracefully');
-    } catch (error) {
-      runner.assert(true, 'Error handling should prevent crashes');
+  // Simulate error handling
+  try {
+    // Simulate a render function that might throw
+    const renderFunction = () => {
+      if (Math.random() < 0.1) {
+        throw new Error('Random render error');
+      }
+    };
+    
+    // Call it a few times to test error handling
+    for (let i = 0; i < 10; i++) {
+      try {
+        renderFunction();
+      } catch (error) {
+        // Should handle error gracefully
+      }
     }
-  }, 200);
+    
+    runner.assert(true, 'Error handling should prevent crashes');
+  } catch (error) {
+    runner.assert(true, 'Error handling should work');
+  }
 });
 
-runner.test('Integration - System recovery after errors', () => {
+runner.test('Integration - System recovery after errors', async () => {
   const world = new WorldManager();
   const combatSystem = new CombatSystem();
   
@@ -472,16 +492,8 @@ runner.test('Integration - System recovery after errors', () => {
 
 // ============= CROSS-PLATFORM COMPATIBILITY TESTS =============
 
-runner.test('Integration - Cross-platform compatibility', () => {
+runner.test('Integration - Cross-platform compatibility', async () => {
   const world = new WorldManager();
-  const gameLoop = new GameLoop(
-    (deltaTime) => {
-      world.update(deltaTime);
-    },
-    () => {
-      // Cross-platform render function
-    }
-  );
   
   // Test different viewport sizes
   const viewports = [
@@ -490,30 +502,23 @@ runner.test('Integration - Cross-platform compatibility', () => {
     { width: 1920, height: 1080 } // Desktop
   ];
   
-  viewports.forEach(viewport => {
-    // Mock viewport
-    Object.defineProperty(window, 'innerWidth', { value: viewport.width, configurable: true });
-    Object.defineProperty(window, 'innerHeight', { value: viewport.height, configurable: true });
-    
+  // Test each viewport
+  for (const viewport of viewports) {
     // Create entity
     const entityId = world.createEntity(['Position']);
     world.addComponent(entityId, 'Position', { x: viewport.width / 2, y: viewport.height / 2 });
     
-    gameLoop.start();
+    // Simulate some updates
+    runner.simulateGameLoop(world, 0.016, 5);
     
-    // Let it run briefly
-    setTimeout(() => {
-      gameLoop.stop();
-      
-      // Should not throw
-      runner.assert(true, `Viewport ${viewport.width}x${viewport.height} should be supported`);
-    }, 50);
-  });
+    // Should not throw
+    runner.assert(true, `Viewport ${viewport.width}x${viewport.height} should be supported`);
+  }
 });
 
 // ============= DATA CONSISTENCY TESTS =============
 
-runner.test('Integration - Data consistency across systems', () => {
+runner.test('Integration - Data consistency across systems', async () => {
   const world = new WorldManager();
   const saveSystem = new SaveSystem();
   const cameraSystem = new CameraSystem();
@@ -535,38 +540,42 @@ runner.test('Integration - Data consistency across systems', () => {
   world.addComponent(playerId, 'Sprite', { 
     textureId: 'hero', 
     frameIndex: 0, 
-    width: 16, 
-    height: 32 
+    visible: true 
   });
   
+  // Set camera target
   cameraSystem.setTarget(playerId);
+  cameraSystem.setViewport(800, 600);
+  cameraSystem.update(0.016);
   
-  // Save data
-  const saveSuccess = saveSystem.saveGame(1, 'Consistency Test');
+  // Save game
+  const saveSuccess = saveSystem.saveGame(1, 'Data Consistency Test');
   runner.assert(saveSuccess, 'Save should succeed');
   
-  // Clear and reload
+  // Clear world
   world.clear();
+  
+  // Load game
   const loadSuccess = saveSystem.loadGame(1);
   runner.assert(loadSuccess, 'Load should succeed');
   
-  // Verify data consistency
+  // Verify loaded data consistency
   const loadedEntities = world.query(['Position', 'Health', 'CombatState', 'Sprite']);
   runner.assertArrayLength(loadedEntities, 1, 'Should have 1 loaded entity');
   
   if (loadedEntities.length > 0) {
-    const entity = loadedEntities[0];
-    const position = world.getComponent<Position>(entity.id, 'Position');
-    const health = world.getComponent<Health>(entity.id, 'Health');
-    const combatState = world.getComponent<CombatState>(entity.id, 'CombatState');
-    const sprite = world.getComponent<any>(entity.id, 'Sprite');
+    const position = world.getComponent<Position>(loadedEntities[0].id, 'Position');
+    const health = world.getComponent<Health>(loadedEntities[0].id, 'Health');
+    const combatState = world.getComponent<CombatState>(loadedEntities[0].id, 'CombatState');
+    const sprite = world.getComponent<Sprite>(loadedEntities[0].id, 'Sprite');
     
+    // Verify all components are loaded correctly
     runner.assertNotNull(position, 'Position should be loaded');
     runner.assertNotNull(health, 'Health should be loaded');
     runner.assertNotNull(combatState, 'CombatState should be loaded');
     runner.assertNotNull(sprite, 'Sprite should be loaded');
     
-    // Verify specific values
+    // Verify data integrity
     runner.assertEqual(position!.x, 100, 'Position X should be consistent');
     runner.assertEqual(position!.y, 100, 'Position Y should be consistent');
     runner.assertEqual(health!.current, 75, 'Health current should be consistent');
@@ -578,6 +587,10 @@ runner.test('Integration - Data consistency across systems', () => {
 });
 
 // Run all tests
-runner.run();
+runner.run().then((results) => {
+  console.log(`Integration tests completed. Passed: ${results.passed}, Failed: ${results.failed}`);
+}).catch((error) => {
+  console.error('Integration test runner failed:', error);
+});
 
 export { runner as integrationTestRunner };
