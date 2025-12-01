@@ -4,140 +4,64 @@
  */
 
 import React from 'react';
+import { setupDOMMock, cleanupDOMMock, getMockDocument, getMockWindow } from './dom-mock';
 
-// Mock window for Node.js testing environment
-const mockWindow = {
-  innerWidth: 1024,
-  innerHeight: 768,
-  addEventListener: () => {},
-  removeEventListener: () => {},
-  dispatchEvent: () => {},
-  matchMedia: () => ({ matches: false } as any),
-  requestAnimationFrame: (callback: any) => setTimeout(callback, 16) as any,
-  cancelAnimationFrame: (id: any) => clearTimeout(id) as any,
-  getComputedStyle: () => ({}) as any,
-  pageXOffset: 0,
-  pageYOffset: 0,
-  scrollX: 0,
-  scrollY: 0,
-  scrollTo: () => {},
-  localStorage: {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-    clear: () => {},
-    key: () => null,
-    length: 0
-  }
-};
+// Set up DOM mocking for all component tests
+setupDOMMock();
 
-// Make properties configurable
-Object.defineProperty(mockWindow, 'innerWidth', {
-  value: 1024,
-  writable: true,
-  configurable: true
-});
-
-Object.defineProperty(mockWindow, 'innerHeight', {
-  value: 768,
-  writable: true,
-  configurable: true
-});
-
-// Set up global window mock
-(globalThis as any).window = mockWindow;
-
-// Simple mock DOM for testing
-class MockDOM {
-  private elements: Map<string, HTMLElement> = new Map();
-
-  public createElement(tag: string): HTMLElement {
-    const element = {
-      tagName: tag.toUpperCase(),
-      innerHTML: '',
-      textContent: '',
-      children: [],
-      setAttribute: (name: string, value: string) => {
-        element.attributes = element.attributes || {};
-        element.attributes[name] = value;
-      },
-      getAttribute: (name: string) => {
-        return element.attributes?.[name];
-      },
-      hasAttribute: (name: string) => {
-        return element.attributes?.hasOwnProperty(name) || false;
-      },
-      appendChild: (child: any) => {
-        element.children.push(child);
-      },
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      style: {},
-      attributes: {}
-    } as any;
-    
-    return element;
-  }
-
-  public queryByTestId(testId: string): HTMLElement | null {
-    return this.elements.get(testId) || null;
-  }
-
-  public getByTestId(testId: string): HTMLElement {
-    const element = this.elements.get(testId);
+// Test utilities using the new DOM mocking system
+const screen = {
+  queryByTestId: (testId: string) => getMockDocument().querySelector(`[data-testid="${testId}"]`),
+  getByTestId: (testId: string) => {
+    const element = getMockDocument().querySelector(`[data-testid="${testId}"]`);
     if (!element) {
       throw new Error(`Element with test-id "${testId}" not found`);
     }
     return element;
   }
-
-  public registerElement(testId: string, element: HTMLElement): void {
-    this.elements.set(testId, element);
-  }
-
-  public clear(): void {
-    this.elements.clear();
-  }
-}
-
-// Shared DOM instance for all tests
-const sharedMockDOM = new MockDOM();
-
-// Mock render function
-const render = (component: React.ReactElement) => {
-  // Create a mock element and register it
-  const element = sharedMockDOM.createElement('div');
-  const testId = component.props['data-testid'] || 'default';
-  console.log(`Rendering component with test-id: ${testId}`);
-  sharedMockDOM.registerElement(testId, element);
-  console.log(`Registered element. Total elements: ${sharedMockDOM['elements'].size}`);
-  return element;
-};
-
-const screen = {
-  queryByTestId: (testId: string) => sharedMockDOM.queryByTestId(testId),
-  getByTestId: (testId: string) => sharedMockDOM.getByTestId(testId)
 };
 
 const fireEvent = {
-  keyDown: (element: HTMLElement, event: { key: string }) => {
-    // Mock keyboard event
+  keyDown: (element: any, event: { key: string }) => {
+    element.dispatchEvent({ type: 'keydown', key: event.key, preventDefault: () => {} });
   },
-  click: (element: HTMLElement) => {
-    // Mock click event
+  click: (element: any) => {
+    element.dispatchEvent({ type: 'click' });
   },
-  mouseOver: (element: HTMLElement) => {
-    // Mock mouse over event
+  mouseOver: (element: any) => {
+    element.dispatchEvent({ type: 'mouseover' });
   },
-  mouseOut: (element: HTMLElement) => {
-    // Mock mouse out event
+  mouseOut: (element: any) => {
+    element.dispatchEvent({ type: 'mouseout' });
   },
-  update: (element: HTMLElement, event: { target: { dataset: Record<string, string> } }) => {
-    // Mock update event
+  update: (element: any, event: { target: { dataset: Record<string, string> } }) => {
+    element.dispatchEvent({ type: 'update', target: event.target });
   },
   resize: (element: Window) => {
-    // Mock resize event
+    element.dispatchEvent({ type: 'resize' });
   }
+};
+
+// Mock render function using the new DOM system
+const render = (component: React.ReactElement) => {
+  const document = getMockDocument();
+  const element = document.createElement('div');
+  
+  // Set test-id from component props
+  const testId = component.props['data-testid'] || 'default';
+  element.setAttribute('data-testid', testId);
+  
+  // Set element content
+  if (component.props.children) {
+    element.textContent = String(component.props.children);
+  }
+  
+  console.log(`Rendering component with test-id: ${testId}`);
+  
+  // Append to body for testing
+  document.body.appendChild(element);
+  
+  return element;
 };
 
 // Mock components for testing
@@ -171,8 +95,11 @@ class ComponentTestRunner {
   public run(): { passed: number; failed: number } {
     console.log('Running Component Tests...\n');
     
-    // Clear DOM before each test
-    sharedMockDOM.clear();
+    // Clear DOM before each test using the new mocking system
+    const document = getMockDocument();
+    while (document.body.firstChild) {
+      document.body.removeChild(document.body.firstChild);
+    }
 
     for (const test of this.tests) {
       try {

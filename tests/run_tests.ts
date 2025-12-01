@@ -3,6 +3,11 @@
  * @fileoverview Runs all test suites and provides comprehensive test reporting
  */
 
+import { setupDOMMock, cleanupDOMMock } from './dom-mock';
+
+// Set up global DOM mocking for all test suites
+setupDOMMock();
+
 import { engineTestRunner } from './engine.test';
 import { utilTestRunner } from './utils.test';
 import { saveSystemTestRunner } from './save-system.test';
