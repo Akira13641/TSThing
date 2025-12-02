@@ -320,9 +320,14 @@ runner.test('Simulated GameLoop - Performance timing', () => {
 // ============= GLOBAL LOGGER TESTS =============
 
 runner.test('GlobalLogger - Basic logging', () => {
-  // Reset logger to ensure clean state
-  GlobalLogger.resetInstance();
   const logger = GlobalLogger.getInstance();
+  
+  // Clear existing logs
+  logger.clearLogs();
+  
+  // Ensure console logging is enabled
+  logger.setConfig({ consoleLogging: true, visualLogging: false, logLevel: LogLevel.DEBUG, verboseMode: false });
+  
   const originalConsoleLog = console.info;
   let logCallCount = 0;
   
@@ -366,12 +371,13 @@ runner.test('GlobalLogger - Configuration', () => {
 });
 
 runner.test('GlobalLogger - Log statistics', () => {
-  // Reset logger to ensure clean state
-  GlobalLogger.resetInstance();
   const logger = GlobalLogger.getInstance();
   
   // Clear existing logs
   logger.clearLogs();
+  
+  // Set log level to DEBUG to capture all logs
+  logger.setConfig({ consoleLogging: false, visualLogging: false, logLevel: LogLevel.DEBUG, verboseMode: false });
   
   logger.info(LogSource.CORE, 'Info message');
   logger.warn(LogSource.UI, 'Warning message');
@@ -415,13 +421,14 @@ runner.test('Integration - World and Update Cycle', () => {
 });
 
 runner.test('Integration - Logger and World', () => {
-  // Reset logger to ensure clean state
-  GlobalLogger.resetInstance();
   const logger = GlobalLogger.getInstance();
   const world = new WorldManager();
   
   // Clear logs
   logger.clearLogs();
+  
+  // Set log level to DEBUG to capture all logs
+  logger.setConfig({ consoleLogging: false, visualLogging: false, logLevel: LogLevel.DEBUG, verboseMode: false });
   
   // Create entity (should log)
   const entityId = world.createEntity(['Position']);

@@ -282,11 +282,6 @@ export class SaveSystem {
    * @returns Success status
    */
   public deleteSave(slot: number): boolean {
-    if (!this.world) {
-      logger.error(LogSource.CORE, 'World manager not set for delete operation');
-      return false;
-    }
-
     if (slot < 1 || slot > GAME_CONFIG.MAX_SAVE_SLOTS) {
       logger.error(LogSource.CORE, `Invalid save slot: ${slot}`);
       return false;

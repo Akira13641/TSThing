@@ -74,13 +74,6 @@ export class GlobalLogger {
   }
 
   /**
-   * Resets the singleton instance (for testing purposes)
-   */
-  public static resetInstance(): void {
-    GlobalLogger.instance = new GlobalLogger();
-  }
-
-  /**
    * Sets the logger configuration
    * @param config - New configuration values
    */

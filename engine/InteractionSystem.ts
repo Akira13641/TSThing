@@ -476,10 +476,12 @@ export class InteractionSystem {
         conditionMet = !conditionMet;
       }
 
-      // When negated, return true if condition is not met (player doesn't have item)
-      // When not negated, return true if condition is met (player has item)
-      return condition.negate ? !conditionMet : conditionMet;
+      if (!conditionMet) {
+        return false;
       }
+    }
+
+    return true;
   }
 
   /**

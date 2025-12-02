@@ -111,9 +111,6 @@ export class CameraSystem {
   /** Current shake effect */
   private shake: CameraShake | null = null;
 
-  /** Shake time accumulator for deterministic behavior */
-  private shakeTime: number = 0;
-
   /** Current transition */
   private transition: CameraTransition | null = null;
 
@@ -326,9 +323,6 @@ export class CameraSystem {
       offset: { x: 0, y: 0 }
     };
 
-    // Reset shake time for deterministic behavior
-    this.shakeTime = 0;
-
     logger.debug(LogSource.CAMERA, `Camera shake started: intensity=${intensity}, duration=${duration}s`);
   }
 
@@ -395,8 +389,8 @@ export class CameraSystem {
 
     // Initialize camera without world (standalone mode)
     this.camera = {
-      x: 0,
-      y: 0,
+      x: this.viewport.width / 2,
+      y: this.viewport.height / 2,
       zoom: 1.0,
       targetEntityId: null
     };
@@ -413,10 +407,10 @@ export class CameraSystem {
     // Create camera entity
     this.cameraEntityId = this.world.createEntity(['Camera']);
 
-    // Add camera component - initialize at origin
+    // Add camera component - initialize at viewport center
     this.camera = {
-      x: 0,
-      y: 0,
+      x: this.viewport.width / 2,
+      y: this.viewport.height / 2,
       zoom: 1.0,
       targetEntityId: null
     };
@@ -497,7 +491,6 @@ export class CameraSystem {
     if (!this.shake) return;
 
     this.shake.timer -= deltaTime;
-    this.shakeTime += deltaTime;
 
     if (this.shake.timer <= 0) {
       this.shake = null;
@@ -508,8 +501,9 @@ export class CameraSystem {
     const progress = 1 - (this.shake.timer / this.shake.duration);
     const currentIntensity = this.shake.intensity * (1 - progress);
 
-    this.shake.offset.x = Math.sin(this.shakeTime * this.shake.frequency * Math.PI * 2) * currentIntensity;
-    this.shake.offset.y = Math.cos(this.shakeTime * this.shake.frequency * Math.PI * 2.5) * currentIntensity;
+    const time = Date.now() / 1000;
+    this.shake.offset.x = Math.sin(time * this.shake.frequency * Math.PI * 2) * currentIntensity;
+    this.shake.offset.y = Math.cos(time * this.shake.frequency * Math.PI * 2.5) * currentIntensity;
   }
 
   /**
@@ -578,16 +572,16 @@ export class CameraSystem {
   public getFinalPosition(): { x: number; y: number } {
     if (!this.camera) return { x: 0, y: 0 };
 
-    let finalX = this.camera.x;
-    let finalY = this.camera.y;
+    let x = this.camera.x;
+    let y = this.camera.y;
 
-    // Apply shake offset if active
+    // Apply shake offset
     if (this.shake) {
-      finalX += this.shake.offset.x;
-      finalY += this.shake.offset.y;
+      x += this.shake.offset.x;
+      y += this.shake.offset.y;
     }
 
-    return { x: finalX, y: finalY };
+    return { x, y };
   }
 
   /**
@@ -597,16 +591,11 @@ export class CameraSystem {
     this.ensureCamera();
     if (!this.camera) return;
 
-    // Reset to current viewport center, not default viewport
     this.camera.x = this.viewport.width / 2;
     this.camera.y = this.viewport.height / 2;
     this.camera.zoom = 1.0;
     this.camera.targetEntityId = null;
 
-    this.followMode = CameraFollowMode.SMOOTH;
-    this.followSpeed = 5.0;
-    this.bounds.enabled = false;
-    this.deadZone = { width: 0, height: 0 };
     this.shake = null;
     this.transition = null;
 
