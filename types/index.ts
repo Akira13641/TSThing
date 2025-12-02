@@ -448,3 +448,241 @@ export interface DebugTools {
   /** Pathfinding visualization */
   showPathfinding: boolean;
 }
+
+/**
+ * Character class enumeration for Aetherial Vanguard
+ */
+export enum CharacterClass {
+  WARRIOR = 'WARRIOR',
+  THIEF = 'THIEF',
+  MONK = 'MONK',
+  CRIMSON_SAGE = 'CRIMSON_SAGE',
+  CLERIC = 'CLERIC',
+  SORCERER = 'SORCERER',
+  // Upgraded classes
+  KNIGHT = 'KNIGHT',
+  ASSASSIN = 'ASSASSIN',
+  GRANDMASTER = 'GRANDMASTER',
+  CRIMSON_WARLOCK = 'CRIMSON_WARLOCK',
+  HIGH_PRIEST = 'HIGH_PRIEST',
+  ARCHMAGE = 'ARCHMAGE'
+}
+
+/**
+ * Character stats component for RPG mechanics
+ */
+export interface CharacterStats {
+  /** Character class */
+  class: CharacterClass;
+  /** Current level (1-99) */
+  level: number;
+  /** Experience points */
+  experience: number;
+  /** Experience to next level */
+  experienceToNext: number;
+  /** Strength stat (physical attack power) */
+  strength: number;
+  /** Agility stat (speed, evasion, critical chance) */
+  agility: number;
+  /** Intelligence stat (magic power, magic defense) */
+  intelligence: number;
+  /** Vitality stat (health, defense) */
+  vitality: number;
+  /** Luck stat (critical hits, item drops) */
+  luck: number;
+  /** Base health without equipment */
+  baseHealth: number;
+  /** Base mana without equipment */
+  baseMana: number;
+}
+
+/**
+ * Equipment slots for character inventory
+ */
+export enum EquipmentSlot {
+  RIGHT_HAND = 'RIGHT_HAND',
+  LEFT_HAND = 'LEFT_HAND',
+  HEAD = 'HEAD',
+  BODY = 'BODY',
+  ACCESSORY_1 = 'ACCESSORY_1',
+  ACCESSORY_2 = 'ACCESSORY_2'
+}
+
+/**
+ * Equipment component for characters
+ */
+export interface Equipment {
+  /** Currently equipped items by slot */
+  equipped: Record<EquipmentSlot, string | null>;
+  /** Available equipment slots */
+  slots: EquipmentSlot[];
+}
+
+/**
+ * Magic system component for spell casting
+ */
+export interface MagicUser {
+  /** Spell charges by level (1-9) */
+  spellCharges: Record<number, number>;
+  /** Known spells by level */
+  knownSpells: Record<number, string[]>;
+  /** Maximum spells per level */
+  maxSpellsPerLevel: number;
+  /** Current magic points */
+  currentMana: number;
+  /** Maximum magic points */
+  maxMana: number;
+  /** Magic defense */
+  magicDefense: number;
+}
+
+/**
+ * Spell definition structure
+ */
+export interface SpellDef {
+  /** Unique spell identifier */
+  id: string;
+  /** Spell display name */
+  name: string;
+  /** Spell description */
+  description: string;
+  /** Spell level (1-9) */
+  level: number;
+  /** Magic school */
+  school: 'FIRE' | 'WATER' | 'EARTH' | 'WIND' | 'HOLY' | 'DARK' | 'NEUTRAL';
+  /** Spell type */
+  type: 'DAMAGE' | 'HEAL' | 'BUFF' | 'DEBUFF' | 'SPECIAL';
+  /** Target type */
+  target: 'ENEMY' | 'ALLY' | 'ALL_ENEMIES' | 'ALL_ALLIES' | 'SELF';
+  /** MP cost */
+  mpCost: number;
+  /** Power/Effect value */
+  power: number;
+  /** Status effects inflicted */
+  statusEffects?: string[];
+  /** Animation data */
+  animation: {
+    textureId: string;
+    duration: number;
+    frames: number[];
+  };
+  /** Sound effect ID */
+  soundEffect: string;
+}
+
+/**
+ * Status effect enumeration
+ */
+export enum StatusEffect {
+  POISON = 'POISON',
+  STONE = 'STONE',
+  DARKNESS = 'DARKNESS',
+  SILENCE = 'SILENCE',
+  PARALYSIS = 'PARALYSIS',
+  BLIND = 'BLIND',
+  SLEEP = 'SLEEP',
+  CONFUSION = 'CONFUSION',
+  CHARM = 'CHARM',
+  BERSERK = 'BERSERK',
+  SLOW = 'SLOW',
+  HASTE = 'HASTE',
+  PROTECT = 'PROTECT',
+  SHELL = 'SHELL',
+  REGEN = 'REGEN'
+}
+
+/**
+ * Status effect component for entities
+ */
+export interface StatusEffects {
+  /** Active status effects */
+  active: Record<StatusEffect, {
+    /** Remaining duration in turns */
+    duration: number;
+    /** Effect strength/potency */
+    potency: number;
+    /** Source of effect */
+    source: string;
+  }>;
+  /** Immunities */
+  immunities: StatusEffect[];
+  /** Resistances */
+  resistances: Record<StatusEffect, number>;
+}
+
+/**
+ * Battle position component for combat
+ */
+export interface BattlePosition {
+  /** Row position ('FRONT' or 'BACK') */
+  row: 'FRONT' | 'BACK';
+  /** Column position (0-3 for party, 0-5 for enemies) */
+  column: number;
+  /** Side in battle ('PARTY' or 'ENEMY') */
+  side: 'PARTY' | 'ENEMY';
+}
+
+/**
+ * Battle state component
+ */
+export interface BattleState {
+  /** Whether entity is in battle */
+  inBattle: boolean;
+  /** Current turn order */
+  turnOrder: EntityId[];
+  /** Current acting entity */
+  currentTurn: EntityId | null;
+  /** Action queue for current turn */
+  actionQueue: Array<{
+    entityId: EntityId;
+    action: 'ATTACK' | 'SPELL' | 'ITEM' | 'DEFEND' | 'FLEE';
+    targetId: EntityId | null;
+    data?: unknown;
+  }>;
+  /** Battle phase */
+  phase: 'INPUT' | 'EXECUTION' | 'VICTORY' | 'DEFEAT';
+}
+
+/**
+ * Party component for player characters
+ */
+export interface Party {
+  /** Party member entity IDs */
+  members: EntityId[];
+  /** Maximum party size */
+  maxSize: number;
+  /** Current formation order */
+  formation: EntityId[];
+  /** Active party members (not defeated/stoned) */
+  activeMembers: EntityId[];
+}
+
+/**
+ * Game progression component
+ */
+export interface GameProgression {
+  /** Current story chapter */
+  chapter: number;
+  /** Current location */
+  location: string;
+  /** Visited locations */
+  visitedLocations: Set<string>;
+  /** Completed dungeons */
+  completedDungeons: Set<string>;
+  /** Defeated bosses */
+  defeatedBosses: Set<string>;
+  /** Acquired key items */
+  keyItems: Set<string>;
+  /** Current party gold */
+  gold: number;
+  /** Current game time (minutes) */
+  gameMinutes: number;
+  /** Number of saves */
+  saveCount: number;
+  /** Number of battles won */
+  battlesWon: number;
+  /** Number of battles fled */
+  battlesFled: number;
+  /** Number of enemies defeated */
+  enemiesDefeated: number;
+}
