@@ -159,10 +159,14 @@ export class DebugToolsSystem {
    * Creates a new DebugToolsSystem instance
    */
   constructor() {
+    // Only initialize DOM-dependent elements if we're in a browser environment
+    if (typeof document !== 'undefined') {
+      this.createDebugCanvas();
+      this.setupKeyboardShortcuts();
+    }
+    
     this.initializeSpawnEntities();
     this.initializeWarpLocations();
-    this.createDebugCanvas();
-    this.setupKeyboardShortcuts();
     
     logger.info(LogSource.CORE, 'DebugToolsSystem initialized');
   }
@@ -173,6 +177,7 @@ export class DebugToolsSystem {
    */
   public setWorld(world: WorldManager): void {
     this.world = world;
+    logger.debug(LogSource.CORE, `World manager set for debugging. World is null: ${this.world === null}`);
   }
 
   /**
@@ -181,7 +186,23 @@ export class DebugToolsSystem {
    */
   public setPlayer(playerId: EntityId): void {
     this.playerId = playerId;
-    logger.debug(LogSource.CORE, `Player entity set to ${playerId} for debugging`);
+    logger.debug(LogSource.CORE, `Player entity set to ${playerId} for debugging. PlayerId is null: ${this.playerId === null}`);
+  }
+
+  /**
+   * Gets the current world manager (for testing)
+   * @returns World manager instance
+   */
+  public getWorld(): WorldManager | null {
+    return this.world;
+  }
+
+  /**
+   * Gets the current player ID (for testing)
+   * @returns Player entity ID
+   */
+  public getPlayerId(): EntityId | null {
+    return this.playerId;
   }
 
   /**
@@ -212,6 +233,77 @@ export class DebugToolsSystem {
     this.updateDebugElements();
     
     logger.debug(LogSource.CORE, `Debug feature ${feature} ${this.config[feature] ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Toggles debug menu visibility
+   */
+  private toggleDebugMenu(): void {
+    this.config.showEntitySpawner = !this.config.showEntitySpawner;
+    this.updateDebugElements();
+  }
+
+  /**
+   * Toggles debug console visibility
+   */
+  private toggleDebugConsole(): void {
+    // This would toggle a debug console UI
+    logger.debug(LogSource.CORE, 'Debug console toggled');
+  }
+
+  /**
+   * Updates debug elements (placeholder implementation)
+   */
+  private updateDebugElements(): void {
+    // This would update UI elements based on current config
+    // Intentionally left minimal for test environment
+  }
+
+  /**
+   * Kills an entity
+   * @param entityId - Entity ID to kill
+   * @returns Success status
+   */
+  private killEntity(entityId: EntityId): boolean {
+    if (!this.world) return false;
+    
+    const entity = this.world.entities.get(entityId);
+    if (!entity) return false;
+    
+    this.world.removeEntity(entityId);
+    logger.info(LogSource.CORE, `Killed entity ${entityId}`);
+    return true;
+  }
+
+  /**
+   * Clears all entities except player
+   */
+  private clearEntities(): void {
+    if (!this.world) return;
+    
+    const entities = this.world.query(['Position']);
+    entities.forEach(entityId => {
+      if (entityId !== this.playerId) {
+        this.world.removeEntity(entityId);
+      }
+    });
+    
+    logger.info(LogSource.CORE, 'Cleared all entities');
+  }
+
+  /**
+   * Resets game state
+   */
+  private resetGame(): void {
+    if (!this.world) return;
+    
+    // Clear all entities
+    const entities = Array.from(this.world.entities.keys());
+    entities.forEach(entityId => {
+      this.world.removeEntity(entityId);
+    });
+    
+    logger.info(LogSource.CORE, 'Game reset');
   }
 
   /**
@@ -278,7 +370,7 @@ export class DebugToolsSystem {
       return false;
     }
 
-    if (!this.world || !this.playerId) {
+    if (!this.world || this.playerId === null || this.playerId === undefined) {
       logger.error(LogSource.CORE, 'World or player not set for warping');
       return false;
     }
@@ -369,7 +461,8 @@ export class DebugToolsSystem {
           const x = parseFloat(args[1]);
           const y = parseFloat(args[2]);
           const spawnedId = this.spawnEntity(entityId, x, y);
-          return spawnedId ? `Spawned ${entityId} (ID: ${spawnedId})` : 'Failed to spawn entity';
+          const result = spawnedId !== null ? `Spawned ${entityId} (ID: ${spawnedId})` : 'Failed to spawn entity';
+          return result;
           
         case 'warp':
           if (args.length < 1) {
@@ -384,7 +477,7 @@ export class DebugToolsSystem {
           return this.killEntity(parseInt(args[0])) ? 'Entity killed' : 'Failed to kill entity';
           
         case 'heal':
-          if (!this.playerId) return 'Player not set';
+          if (this.playerId === null || this.playerId === undefined) return 'Player not set';
           return this.healPlayer(999) ? 'Player healed' : 'Failed to heal player';
           
         case 'give':
@@ -489,6 +582,8 @@ export class DebugToolsSystem {
    * Creates debug canvas for overlay rendering
    */
   private createDebugCanvas(): void {
+    if (typeof document === 'undefined') return;
+    
     this.debugCanvas = document.createElement('canvas');
     this.debugCanvas.style.position = 'fixed';
     this.debugCanvas.style.top = '0';
@@ -503,18 +598,22 @@ export class DebugToolsSystem {
     document.body.appendChild(this.debugCanvas);
     
     // Handle window resize
-    window.addEventListener('resize', () => {
-      if (this.debugCanvas) {
-        this.debugCanvas.width = window.innerWidth;
-        this.debugCanvas.height = window.innerHeight;
-      }
-    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => {
+        if (this.debugCanvas) {
+          this.debugCanvas.width = window.innerWidth;
+          this.debugCanvas.height = window.innerHeight;
+        }
+      });
+    }
   }
 
   /**
    * Sets up keyboard shortcuts for debug tools
    */
   private setupKeyboardShortcuts(): void {
+    if (typeof document === 'undefined') return;
+    
     document.addEventListener('keydown', (event) => {
       // Only work when not in input fields
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
@@ -891,7 +990,7 @@ export class DebugToolsSystem {
    * @returns Success status
    */
   private healPlayer(amount: number): boolean {
-    if (!this.world || !this.playerId) return false;
+    if (!this.world || this.playerId === null || this.playerId === undefined) return false;
     
     const health = this.world.getComponent<Health>(this.playerId, 'Health');
     if (health) {
