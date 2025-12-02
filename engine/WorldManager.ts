@@ -13,10 +13,10 @@ import { logger, LogSource } from './GlobalLogger';
 export class WorldManager {
   /** The ECS world instance */
   private world: World;
-  
+
   /** Query cache for performance optimization */
   private queryCache: Map<string, EntityId[]> = new Map();
-  
+
   /** Component change listeners */
   private listeners: Map<EntityId, Map<ComponentType, Set<(data: unknown) => void>>> = new Map();
 
@@ -41,14 +41,14 @@ export class WorldManager {
    */
   public createEntity(components?: ComponentType[]): EntityId {
     const entityId = this.world.nextEntityId++;
-    
+
     const entity: Entity = {
       id: entityId,
       components: new Set(components || [])
     };
 
     this.world.entities.set(entityId, entity);
-    
+
     // Initialize component data maps for new entity
     if (components) {
       components.forEach(componentType => {
@@ -62,7 +62,7 @@ export class WorldManager {
     this.invalidateQueryCache();
 
     logger.debug(LogSource.ECS, `Created entity ${entityId} with components: ${components?.join(', ') || 'none'}`);
-    
+
     return entityId;
   }
 
@@ -84,7 +84,7 @@ export class WorldManager {
 
     // Remove entity
     this.world.entities.delete(entityId);
-    
+
     // Clean up listeners
     this.listeners.delete(entityId);
 
@@ -114,7 +114,7 @@ export class WorldManager {
 
     // Add component to entity
     entity.components.add(componentType);
-    
+
     // Store component data
     this.world.components.get(componentType)!.set(entityId, data);
 
@@ -141,7 +141,7 @@ export class WorldManager {
 
     // Remove component from entity
     entity.components.delete(componentType);
-    
+
     // Remove component data
     const componentMap = this.world.components.get(componentType);
     if (componentMap) {
@@ -215,7 +215,7 @@ export class WorldManager {
   public query(componentTypes: ComponentType[]): EntityId[] {
     // Create cache key
     const cacheKey = componentTypes.sort().join(',');
-    
+
     // Check cache first
     if (this.queryCache.has(cacheKey)) {
       return this.queryCache.get(cacheKey)!;
@@ -230,12 +230,12 @@ export class WorldManager {
 
     // Find entities with all specified components
     const matchingEntities: EntityId[] = [];
-    
+
     for (const [entityId, entity] of this.world.entities) {
-      const hasAllComponents = componentTypes.every(componentType => 
+      const hasAllComponents = componentTypes.every(componentType =>
         entity.components.has(componentType)
       );
-      
+
       if (hasAllComponents) {
         matchingEntities.push(entityId);
       }
@@ -255,19 +255,19 @@ export class WorldManager {
   public queryWithComponents(componentTypes: ComponentType[]): QueryResult {
     const entityIds = this.query(componentTypes);
     const entities = entityIds.map(id => this.world.entities.get(id)!).filter(entity => entity !== undefined);
-    
+
     const components = new Map<EntityId, Map<ComponentType, unknown>>();
-    
+
     entityIds.forEach(entityId => {
       const entityComponents = new Map<ComponentType, unknown>();
-      
+
       componentTypes.forEach(componentType => {
         const data = this.getComponent(entityId, componentType);
         if (data !== null) {
           entityComponents.set(componentType, data);
         }
       });
-      
+
       components.set(entityId, entityComponents);
     });
 
@@ -285,7 +285,7 @@ export class WorldManager {
   public addSystem(system: SystemFunction, priority: number = 0): void {
     // Insert system at the correct position based on priority
     let insertIndex = this.world.systems.length;
-    
+
     for (let i = 0; i < this.world.systems.length; i++) {
       // This is a simplified priority system - in a real implementation,
       // you'd store priorities with systems and sort accordingly
@@ -336,8 +336,8 @@ export class WorldManager {
    * @returns Unsubscribe function
    */
   public subscribe(
-    entityId: EntityId, 
-    componentType: ComponentType, 
+    entityId: EntityId,
+    componentType: ComponentType,
     callback: (data: unknown) => void
   ): () => void {
     // Initialize entity listeners map if needed
@@ -346,7 +346,7 @@ export class WorldManager {
     }
 
     const entityListeners = this.listeners.get(entityId)!;
-    
+
     // Initialize component listeners set if needed
     if (!entityListeners.has(componentType)) {
       entityListeners.set(componentType, new Set());
@@ -442,7 +442,7 @@ export class WorldManager {
     componentTypes: string[];
   } {
     const componentTypes = Array.from(this.world.components.keys());
-    
+
     return {
       entityCount: this.world.entities.size,
       componentCount: Array.from(this.world.components.values())

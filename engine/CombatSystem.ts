@@ -101,25 +101,28 @@ interface CombatResult {
 export class CombatSystem {
   /** Current combat state */
   private currentState: CombatState = CombatState.INTRO;
-  
+
+  /** Last processed state to prevent re-entry */
+  private lastProcessedState: CombatState | null = null;
+
   /** Combat participants */
   private participants: Map<EntityId, CombatParticipant> = new Map();
-  
+
   /** Action queue */
   private actionQueue: CombatActionQueue[] = [];
-  
+
   /** Current turn participant */
   private currentTurn: EntityId | null = null;
-  
+
   /** Turn order counter */
   private turnCounter: number = 0;
-  
+
   /** Combat result */
   private result: CombatResult | null = null;
-  
+
   /** World manager reference */
   private world: WorldManager | null = null;
-  
+
   /** Animation callbacks */
   private onAnimationComplete: Map<string, () => void> = new Map();
 
@@ -197,6 +200,13 @@ export class CombatSystem {
    * Starts the combat sequence
    */
   private startCombatSequence(): void {
+    // Only process state if it has changed
+    if (this.lastProcessedState === this.currentState) {
+      return;
+    }
+
+    this.lastProcessedState = this.currentState;
+
     switch (this.currentState) {
       case CombatState.INTRO:
         this.startCombatIntro();
@@ -214,7 +224,7 @@ export class CombatSystem {
         this.resolveCombat();
         break;
       case CombatState.VICTORY:
-      this.handleVictory();
+        this.handleVictory();
         break;
       case CombatState.DEFEAT:
         this.handleDefeat();
@@ -227,7 +237,7 @@ export class CombatSystem {
    */
   private startCombatIntro(): void {
     logger.debug(LogSource.COMBAT, 'Starting combat intro');
-    
+
     // Play battle music
     // In a real implementation, this would trigger audio system
     logger.debug(LogSource.COMBAT, 'Playing battle theme');
@@ -248,10 +258,10 @@ export class CombatSystem {
    */
   private startPlayerTurn(): void {
     logger.debug(LogSource.COMBAT, 'Starting player turn');
-    
+
     // Clear action queue
     this.actionQueue = [];
-    
+
     // Enable player input
     // In a real implementation, this would enable combat UI
     logger.debug(LogSource.COMBAT, 'Player input enabled');
@@ -262,10 +272,10 @@ export class CombatSystem {
    */
   private startEnemyTurn(): void {
     logger.debug(LogSource.COMBAT, 'Starting enemy turn');
-    
+
     // Clear action queue
     this.actionQueue = [];
-    
+
     // Process AI for all alive enemies
     const aliveEnemies = Array.from(this.participants.values())
       .filter(p => !p.isPlayer && !p.defeated)
@@ -648,10 +658,10 @@ export class CombatSystem {
    */
   private nextTurn(): void {
     this.turnCounter++;
-    
+
     // Simple turn alternation
     const isPlayerTurn = this.turnCounter % 2 === 0;
-    
+
     if (isPlayerTurn) {
       this.currentState = CombatState.PLAYER_INPUT;
     } else {
@@ -746,6 +756,7 @@ export class CombatSystem {
 
     // Reset combat state
     this.currentState = CombatState.INTRO;
+    this.lastProcessedState = null;
     this.participants.clear();
     this.actionQueue = [];
     this.currentTurn = null;
@@ -807,7 +818,7 @@ export class CombatSystem {
       const animation = this.world?.getComponent<Animation>(participant.entityId, 'Animation');
       if (animation && animation.frameTimer > 0) {
         animation.frameTimer -= deltaTime;
-        
+
         if (animation.frameTimer <= 0) {
           // Move to next frame
           const animationDef = this.getAnimationDefinition(animation.currentAnimation);
@@ -822,7 +833,7 @@ export class CombatSystem {
               }
             }
           }
-          
+
           animation.frameTimer = animationDef.frameDuration;
         }
       }

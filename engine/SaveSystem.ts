@@ -28,7 +28,7 @@ export interface SaveGameData {
     /** Save file version for migration */
     version: string;
   };
-  
+
   /** Player data */
   player: {
     /** Player entity ID */
@@ -50,7 +50,7 @@ export interface SaveGameData {
     /** Player gold */
     gold: number;
   };
-  
+
   /** Game state */
   gameState: {
     /** Current scene */
@@ -70,7 +70,7 @@ export interface SaveGameData {
     /** Global variables */
     variables: Record<string, number>;
   };
-  
+
   /** Inventory data */
   inventory: {
     /** Items in inventory */
@@ -85,7 +85,7 @@ export interface SaveGameData {
     /** Inventory size */
     size: number;
   };
-  
+
   /** Party data */
   party: {
     /** Party member entity IDs */
@@ -97,7 +97,7 @@ export interface SaveGameData {
       slot: number;
     }>;
   };
-  
+
   /** World state */
   world: {
     /** Defeated enemies */
@@ -113,7 +113,7 @@ export interface SaveGameData {
     /** Map completion percentage */
     mapCompletion: number;
   };
-  
+
   /** System data */
   system: {
     /** Game statistics */
@@ -160,10 +160,10 @@ export interface SaveSlotInfo {
 export class SaveSystem {
   /** World manager reference */
   private world: WorldManager | null = null;
-  
+
   /** Current save version */
   private readonly CURRENT_VERSION = '1.0.0';
-  
+
   /** Local storage key prefix */
   private readonly STORAGE_PREFIX = 'aetherial_vanguard_save_';
 
@@ -202,7 +202,7 @@ export class SaveSystem {
     try {
       // Gather save data
       const saveData = this.gatherSaveData(saveName);
-      
+
       // Validate save data
       if (!this.validateSaveData(saveData)) {
         logger.error(LogSource.CORE, 'Save data validation failed');
@@ -212,14 +212,14 @@ export class SaveSystem {
       // Serialize and store
       const serializedData = JSON.stringify(saveData);
       const storageKey = this.getStorageKey(slot);
-      
+
       localStorage.setItem(storageKey, serializedData);
-      
+
       logger.info(LogSource.CORE, `Game saved to slot ${slot}: ${saveData.meta.name}`);
-      
+
       // Update save count in stats
       this.updateSaveCount();
-      
+
       return true;
     } catch (error) {
       logger.error(LogSource.CORE, `Failed to save game: ${error}`);
@@ -246,7 +246,7 @@ export class SaveSystem {
     try {
       const storageKey = this.getStorageKey(slot);
       const serializedData = localStorage.getItem(storageKey);
-      
+
       if (!serializedData) {
         logger.warn(LogSource.CORE, `No save data found in slot ${slot}`);
         return false;
@@ -254,7 +254,7 @@ export class SaveSystem {
 
       // Deserialize save data
       const saveData: SaveGameData = JSON.parse(serializedData);
-      
+
       // Validate loaded data
       if (!this.validateSaveData(saveData)) {
         logger.error(LogSource.CORE, `Invalid save data in slot ${slot}`);
@@ -263,12 +263,12 @@ export class SaveSystem {
 
       // Check version and migrate if necessary
       const migratedData = this.migrateSaveData(saveData);
-      
+
       // Apply save data to world
       this.applySaveData(migratedData);
-      
+
       logger.info(LogSource.CORE, `Game loaded from slot ${slot}: ${migratedData.meta.name}`);
-      
+
       return true;
     } catch (error) {
       logger.error(LogSource.CORE, `Failed to load game from slot ${slot}: ${error}`);
@@ -290,7 +290,7 @@ export class SaveSystem {
     try {
       const storageKey = this.getStorageKey(slot);
       localStorage.removeItem(storageKey);
-      
+
       logger.info(LogSource.CORE, `Save file deleted from slot ${slot}`);
       return true;
     } catch (error) {
@@ -305,11 +305,11 @@ export class SaveSystem {
    */
   public getSaveSlots(): SaveSlotInfo[] {
     const slots: SaveSlotInfo[] = [];
-    
+
     for (let slot = 1; slot <= GAME_CONFIG.MAX_SAVE_SLOTS; slot++) {
       const storageKey = this.getStorageKey(slot);
       const serializedData = localStorage.getItem(storageKey);
-      
+
       if (serializedData) {
         try {
           const saveData: SaveGameData = JSON.parse(serializedData);
@@ -333,7 +333,7 @@ export class SaveSystem {
         });
       }
     }
-    
+
     return slots;
   }
 
@@ -349,7 +349,7 @@ export class SaveSystem {
 
     const storageKey = this.getStorageKey(slot);
     const serializedData = localStorage.getItem(storageKey);
-    
+
     if (!serializedData) {
       return false;
     }
@@ -381,14 +381,14 @@ export class SaveSystem {
     }
 
     // Find player entity (assuming first entity with required components)
-    const playerEntities = this.world.query(['Position', 'Health', 'CombatStats', 'Sprite']);
-    
+    const playerEntities = this.world.query(['Position', 'Health', 'CombatStats', 'Sprite', 'Velocity']);
+
     if (!Array.isArray(playerEntities) || playerEntities.length === 0) {
-      throw new Error(`Player entity not found. Query returned: ${JSON.stringify(playerEntities)}`);
+      throw new Error('Player entity not found');
     }
-    
+
     const playerEntityId = playerEntities[0];
-    
+
     if (playerEntityId === undefined || playerEntityId === null) {
       throw new Error(`Player entity not found. First entity ID is undefined. Query returned: ${JSON.stringify(playerEntities)}`);
     }
@@ -408,7 +408,7 @@ export class SaveSystem {
         playtime: 0, // Would be tracked separately
         version: this.CURRENT_VERSION
       },
-      
+
       player: {
         entityId: playerEntityId,
         position: { ...playerPosition },
@@ -420,7 +420,7 @@ export class SaveSystem {
         experience: 0,
         gold: 100
       },
-      
+
       gameState: {
         currentScene: 'OVERWORLD',
         storyFlags: {},
@@ -429,7 +429,7 @@ export class SaveSystem {
         switches: {},
         variables: {}
       },
-      
+
       inventory: {
         items: [
           { itemId: 'potion_health', quantity: 5 },
@@ -445,14 +445,14 @@ export class SaveSystem {
         },
         size: 20
       },
-      
+
       party: {
         members: [playerEntityId],
         formation: [
           { entityId: playerEntityId, position: 'front', slot: 0 }
         ]
       },
-      
+
       world: {
         defeatedEnemies: {},
         openedChests: [],
@@ -461,7 +461,7 @@ export class SaveSystem {
         currentMap: 'overworld',
         mapCompletion: 5
       },
-      
+
       system: {
         stats: {
           battlesWon: 0,
@@ -511,7 +511,7 @@ export class SaveSystem {
     }
 
     // Validate player data
-    if (!data.player.entityId || !data.player.position) {
+    if (data.player.entityId === undefined || !data.player.position) {
       logger.warn(LogSource.CORE, 'Invalid player data in save file');
       return false;
     }
@@ -529,10 +529,10 @@ export class SaveSystem {
     // In a real implementation, this would handle version migrations
     if (data.meta.version !== this.CURRENT_VERSION) {
       logger.info(LogSource.CORE, `Migrating save from version ${data.meta.version} to ${this.CURRENT_VERSION}`);
-      
+
       // Update version
       data.meta.version = this.CURRENT_VERSION;
-      
+
       // Add migration logic here as needed
     }
 
@@ -553,7 +553,7 @@ export class SaveSystem {
 
     // Recreate player entity
     const playerEntityId = this.world.createEntity(['Position', 'Health', 'CombatStats', 'Sprite', 'Velocity']);
-    
+
     // Apply player data
     this.world.addComponent(playerEntityId, 'Position', data.player.position);
     this.world.addComponent(playerEntityId, 'Health', data.player.health);
@@ -562,10 +562,10 @@ export class SaveSystem {
     this.world.addComponent(playerEntityId, 'Velocity', data.player.velocity);
 
     logger.info(LogSource.CORE, `Player entity recreated: ${playerEntityId}`);
-    
+
     // Apply other game state data
     // This would include recreating other entities, setting switches, etc.
-    
+
     logger.info(LogSource.CORE, 'Save data applied successfully');
   }
 
@@ -596,7 +596,7 @@ export class SaveSystem {
     try {
       const storageKey = this.getStorageKey(slot);
       const serializedData = localStorage.getItem(storageKey);
-      
+
       if (!serializedData) {
         logger.warn(LogSource.CORE, `No save data to export in slot ${slot}`);
         return false;
@@ -631,7 +631,7 @@ export class SaveSystem {
     try {
       const text = await file.text();
       const saveData: SaveGameData = JSON.parse(text);
-      
+
       if (!this.validateSaveData(saveData)) {
         logger.error(LogSource.CORE, 'Invalid save file data');
         return false;
@@ -639,7 +639,7 @@ export class SaveSystem {
 
       // Migrate if necessary
       const migratedData = this.migrateSaveData(saveData);
-      
+
       // Store in specified slot
       const serializedData = JSON.stringify(migratedData);
       const storageKey = this.getStorageKey(slot);

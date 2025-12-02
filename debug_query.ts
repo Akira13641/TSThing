@@ -1,36 +1,20 @@
-import { WorldManager } from './engine/WorldManager';
-import { SaveSystem } from './engine/SaveSystem';
+import { setupDOMMock, getMockDocument } from './tests/dom-mock';
 
-const world = new WorldManager();
-const saveSystem = new SaveSystem();
-saveSystem.setWorld(world);
+setupDOMMock();
 
-// Create entity with all required components
-const entityId = world.createEntity(['Position', 'Health', 'CombatStats', 'Sprite']);
-world.addComponent(entityId, 'Position', { x: 100, y: 200 });
-world.addComponent(entityId, 'Health', { current: 75, max: 100 });
-world.addComponent(entityId, 'CombatStats', { 
-  attacking: false, 
-  attack: 15, 
-  defense: 8 
-});
-world.addComponent(entityId, 'Sprite', { textureId: 'hero', frameIndex: 0 });
+const doc = getMockDocument();
+const div = doc.createElement('div');
+div.setAttribute('data-testid', 'test-element');
+doc.body.appendChild(div);
 
-console.log('Entity created:', entityId);
-console.log('All components added');
+console.log('Document body HTML:', doc.body.innerHTML);
+console.log('Div attributes:', (div as any).attributes);
 
-// Test the query that SaveSystem uses
-const playerEntities = world.query(['Position', 'Health', 'CombatStats', 'Sprite']);
-console.log('Query result:', playerEntities);
-console.log('Query length:', playerEntities.length);
+const found = doc.querySelector('[data-testid="test-element"]');
+console.log('Found element:', found ? 'YES' : 'NO');
 
-// Test individual component retrieval
-const position = world.getComponent(entityId, 'Position');
-const health = world.getComponent(entityId, 'Health');
-const combatStats = world.getComponent(entityId, 'CombatStats');
-const sprite = world.getComponent(entityId, 'Sprite');
-
-console.log('Position:', position);
-console.log('Health:', health);
-console.log('CombatStats:', combatStats);
-console.log('Sprite:', sprite);
+if (!found) {
+  console.error('Failed to find element by attribute!');
+} else {
+  console.log('Successfully found element by attribute.');
+}

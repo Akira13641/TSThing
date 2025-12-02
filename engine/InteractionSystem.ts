@@ -150,25 +150,25 @@ export interface InteractionPrompt {
 export class InteractionSystem {
   /** World manager reference */
   private world: WorldManager | null = null;
-  
+
   /** Player entity ID */
   private playerId: EntityId | null = null;
-  
+
   /** Currently available interactions */
   private availableInteractions: InteractionPrompt[] = [];
-  
+
   /** Active interaction (being processed) */
   private activeInteraction: { entityId: EntityId; interaction: Interaction } | null = null;
-  
+
   /** Interaction range multiplier */
   private rangeMultiplier: number = 1.0;
-  
+
   /** Story flags */
   private storyFlags: Record<string, boolean> = {};
-  
+
   /** Player inventory (simplified) */
   private playerInventory: Set<string> = new Set();
-  
+
   /** Player level */
   private playerLevel: number = 1;
 
@@ -271,14 +271,14 @@ export class InteractionSystem {
     }
 
     const entityId = this.world.createEntity(['Position', 'Collision', 'Interaction']);
-    
+
     // Add components (would need actual position and collision data)
     // this.world.addComponent(entityId, 'Position', { x: 0, y: 0 });
     // this.world.addComponent(entityId, 'Collision', { width: 32, height: 32, solid: false });
     this.world.addComponent(entityId, 'Interaction', interaction);
-    
+
     logger.debug(LogSource.GAMEPLAY, `Interactive entity created: ${interaction.id}`);
-    
+
     return entityId;
   }
 
@@ -287,11 +287,11 @@ export class InteractionSystem {
    * @param deltaTime - Time since last frame in seconds
    */
   public update(deltaTime: number): void {
-    if (!this.world || !this.playerId) return;
+    if (!this.world || this.playerId === null) return;
 
     // Update available interactions
     this.updateAvailableInteractions();
-    
+
     // Process active interaction
     if (this.activeInteraction) {
       this.processActiveInteraction(deltaTime);
@@ -322,7 +322,7 @@ export class InteractionSystem {
     }
 
     const bestInteraction = sortedInteractions[0];
-    
+
     // Check if interaction conditions are met
     if (!this.checkInteractionConditions(bestInteraction.interaction, this.playerId, bestInteraction.entityId)) {
       logger.debug(LogSource.GAMEPLAY, `Interaction conditions not met: ${bestInteraction.interaction.id}`);
@@ -331,7 +331,7 @@ export class InteractionSystem {
 
     // Start interaction
     this.startInteraction(bestInteraction.entityId, bestInteraction.interaction);
-    
+
     return true;
   }
 
@@ -349,7 +349,7 @@ export class InteractionSystem {
    */
   public getBestInteraction(): InteractionPrompt | null {
     if (this.availableInteractions.length === 0) return null;
-    
+
     return this.availableInteractions
       .sort((a, b) => {
         if (a.priority !== b.priority) {
@@ -363,38 +363,64 @@ export class InteractionSystem {
    * Updates list of available interactions
    */
   private updateAvailableInteractions(): void {
-    if (!this.world || !this.playerId) return;
+    if (!this.world || this.playerId === null) return;
 
     this.availableInteractions = [];
 
     // Get player position
     const playerPosition = this.world.getComponent<Position>(this.playerId, 'Position');
-    if (!playerPosition) return;
+    if (!playerPosition) {
+      logger.debug(LogSource.GAMEPLAY, `Player position not found for ID ${this.playerId}`);
+      return;
+    }
 
     // Find all entities with Interaction components
     const interactiveEntities = this.world.query(['Interaction']);
-    
+    logger.debug(LogSource.GAMEPLAY, `Found ${interactiveEntities.length} entities with Interaction component`);
+
     for (const entityId of interactiveEntities) {
       if (entityId === this.playerId) continue; // Skip self
 
       const interaction = this.world.getComponent<Interaction>(entityId, 'Interaction');
       const entityPosition = this.world.getComponent<Position>(entityId, 'Position');
-      
-      if (!interaction || !entityPosition) continue;
-      
+
+      if (!interaction) {
+        logger.debug(LogSource.GAMEPLAY, `Entity ${entityId} missing Interaction component`);
+        continue;
+      }
+      if (!entityPosition) {
+        logger.debug(LogSource.GAMEPLAY, `Entity ${entityId} missing Position component`);
+        continue;
+      }
+
       // Check if interaction is enabled and not used (if single use)
-      if (!interaction.enabled || (interaction.singleUse && interaction.used)) continue;
-      
+      if (!interaction.enabled) {
+        logger.debug(LogSource.GAMEPLAY, `Interaction ${interaction.id} disabled`);
+        continue;
+      }
+      if (interaction.singleUse && interaction.used) {
+        logger.debug(LogSource.GAMEPLAY, `Interaction ${interaction.id} already used`);
+        continue;
+      }
+
       // Calculate distance
       const distance = this.calculateDistance(playerPosition, entityPosition);
       const effectiveRange = interaction.range * this.rangeMultiplier;
-      
+
+      logger.debug(LogSource.GAMEPLAY, `Entity ${entityId} distance: ${distance}, range: ${effectiveRange}`);
+
       // Check if within range
-      if (distance > effectiveRange) continue;
-      
+      if (distance > effectiveRange) {
+        logger.debug(LogSource.GAMEPLAY, `Entity ${entityId} out of range`);
+        continue;
+      }
+
       // Check conditions
-      if (!this.checkInteractionConditions(interaction, this.playerId, entityId)) continue;
-      
+      if (!this.checkInteractionConditions(interaction, this.playerId, entityId)) {
+        logger.debug(LogSource.GAMEPLAY, `Interaction ${interaction.id} conditions not met`);
+        continue;
+      }
+
       // Add to available interactions
       this.availableInteractions.push({
         entityId: entityId,
@@ -417,44 +443,44 @@ export class InteractionSystem {
   private checkInteractionConditions(interaction: Interaction, playerId: EntityId, entityId: EntityId): boolean {
     for (const condition of interaction.conditions) {
       let conditionMet = false;
-      
+
       switch (condition.type) {
         case InteractionCondition.ALWAYS:
           conditionMet = true;
           break;
-          
+
         case InteractionCondition.REQUIRES_ITEM:
           conditionMet = this.hasItem(condition.value as string);
           break;
-          
+
         case InteractionCondition.REQUIRES_FLAG:
           conditionMet = this.getStoryFlag(condition.value as string);
           break;
-          
+
         case InteractionCondition.REQUIRES_LEVEL:
           conditionMet = this.playerLevel >= (condition.value as number);
           break;
-          
+
         case InteractionCondition.CUSTOM:
           if (interaction.customCondition) {
             conditionMet = interaction.customCondition(playerId, entityId);
           }
           break;
-          
+
         default:
           conditionMet = false;
       }
-      
+
       // Apply negation if specified
       if (condition.negate) {
         conditionMet = !conditionMet;
       }
-      
+
       if (!conditionMet) {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -464,15 +490,15 @@ export class InteractionSystem {
    * @param interaction - Interaction component
    */
   private startInteraction(entityId: EntityId, interaction: Interaction): void {
-    logger.info(LogSource.GAMEPLAY, `Starting interaction: ${interaction.id}`);
-    
+    logger.info(LogSource.GAMEPLAY, `Starting interaction: ${interaction.id} `);
+
     this.activeInteraction = { entityId, interaction };
-    
+
     // Mark as used if single use
     if (interaction.singleUse) {
       interaction.used = true;
     }
-    
+
     // Execute actions
     this.executeInteractionActions(entityId, interaction);
   }
@@ -501,42 +527,42 @@ export class InteractionSystem {
    * @param action - Action to execute
    */
   private executeAction(entityId: EntityId, action: InteractionAction): void {
-    logger.debug(LogSource.GAMEPLAY, `Executing action: ${action.type}`);
-    
+    logger.debug(LogSource.GAMEPLAY, `Executing action: ${action.type} `);
+
     switch (action.type) {
       case InteractionActionType.DIALOG:
         this.showDialog(action.parameters.text);
         break;
-        
+
       case InteractionActionType.GIVE_ITEM:
         this.addItemToInventory(action.parameters.itemId);
-        this.showDialog(`Received ${action.parameters.itemId}!`);
+        this.showDialog(`Received ${action.parameters.itemId} !`);
         break;
-        
+
       case InteractionActionType.TAKE_ITEM:
         this.removeItemFromInventory(action.parameters.itemId);
         break;
-        
+
       case InteractionActionType.SET_FLAG:
         this.setStoryFlag(action.parameters.flag, action.parameters.value);
         break;
-        
+
       case InteractionActionType.TELEPORT:
         this.teleportPlayer(action.parameters.x, action.parameters.y);
         break;
-        
+
       case InteractionActionType.START_BATTLE:
         this.startBattle(action.parameters.enemyIds);
         break;
-        
+
       case InteractionActionType.HEAL:
         this.healPlayer(action.parameters.amount || 999);
         break;
-        
+
       case InteractionActionType.SAVE_GAME:
         this.saveGame();
         break;
-        
+
       case InteractionActionType.CUSTOM:
         if (action.customAction && this.playerId) {
           action.customAction(this.playerId, entityId);
@@ -607,7 +633,7 @@ export class InteractionSystem {
    * @param text - Dialog text
    */
   private showDialog(text: string): void {
-    logger.debug(LogSource.GAMEPLAY, `Dialog: ${text}`);
+    logger.debug(LogSource.GAMEPLAY, `Dialog: ${text} `);
     // This would integrate with the actual dialog system
   }
 
@@ -618,13 +644,13 @@ export class InteractionSystem {
    */
   private teleportPlayer(x: number, y: number): void {
     if (!this.world || !this.playerId) return;
-    
+
     const position = this.world.getComponent<Position>(this.playerId, 'Position');
     if (position) {
       position.x = x;
       position.y = y;
       this.world.updateComponent(this.playerId, 'Position', position);
-      logger.debug(LogSource.GAMEPLAY, `Player teleported to (${x}, ${y})`);
+      logger.debug(LogSource.GAMEPLAY, `Player teleported to(${x}, ${y})`);
     }
   }
 
@@ -633,7 +659,7 @@ export class InteractionSystem {
    * @param enemyIds - Array of enemy entity IDs
    */
   private startBattle(enemyIds: string[]): void {
-    logger.debug(LogSource.GAMEPLAY, `Starting battle with enemies: ${enemyIds.join(', ')}`);
+    logger.debug(LogSource.GAMEPLAY, `Starting battle with enemies: ${enemyIds.join(', ')} `);
     // This would integrate with the combat system
   }
 
@@ -643,7 +669,7 @@ export class InteractionSystem {
    */
   private healPlayer(amount: number): void {
     if (!this.world || !this.playerId) return;
-    
+
     const health = this.world.getComponent<Health>(this.playerId, 'Health');
     if (health) {
       const healAmount = Math.min(amount, health.max - health.current);

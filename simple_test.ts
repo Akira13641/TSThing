@@ -5,7 +5,7 @@ setupDOMMock();
 
 import { WorldManager } from './engine/WorldManager';
 import { GameLoop } from './engine/GameLoop';
-import { EntityId, Position, Velocity } from './types';
+import { Position } from './types';
 
 // Simple test runner
 class SimpleTestRunner {
@@ -62,43 +62,43 @@ runner.test('Basic async test', async () => {
       // Render function
     }
   );
-  
+
   // Add a simple velocity system to the world
   world.addSystem((world, deltaTime) => {
     const positionComponents = world.components.get('Position');
     const velocityComponents = world.components.get('Velocity');
     const entities = world.entities;
-    
+
     if (positionComponents && velocityComponents) {
       for (const [entityId, position] of positionComponents.entries()) {
         const velocity = velocityComponents.get(entityId);
         if (velocity && entities.has(entityId)) {
           const currentPos = position as { x: number; y: number };
           const vel = velocity as { dx: number; dy: number };
-          
+
           const newPosition = {
             x: currentPos.x + vel.dx * deltaTime,
             y: currentPos.y + vel.dy * deltaTime
           };
-          
+
           positionComponents.set(entityId, newPosition);
         }
       }
     }
   });
-  
+
   // Create test entity
   const entityId = world.createEntity(['Position', 'Velocity']);
   world.addComponent(entityId, 'Position', { x: 0, y: 0 });
   world.addComponent(entityId, 'Velocity', { dx: 10, dy: 5 });
-  
+
   gameLoop.start();
-  
+
   // Wait for the game loop to run for a short time
   await new Promise<void>((resolve) => {
     setTimeout(() => {
       gameLoop.stop();
-      
+
       const position = world.getComponent<Position>(entityId, 'Position');
       runner.assertNotNull(position, 'Position should exist after game loop');
       runner.assert(position!.x > 0 || position!.y > 0, 'Entity should have moved');

@@ -8,7 +8,7 @@
  * Mock CSS Style Declaration
  */
 interface MockCSSStyleDeclaration {
-  [property: string]: string;
+  [property: string]: any;
   cssText: string;
   length: number;
   parentRule: null;
@@ -36,7 +36,7 @@ interface MockHTMLElement {
   attributes: Record<string, string>;
   dataset: Record<string, string>;
   eventListeners: Record<string, Function[]>;
-  
+
   addEventListener(type: string, listener: Function): void;
   removeEventListener(type: string, listener: Function): void;
   dispatchEvent(event: any): boolean;
@@ -70,7 +70,7 @@ interface MockDocument {
   readyState: string;
   location: Location;
   hidden: boolean; // Add hidden property for visibility API
-  
+
   createElement(tagName: string): MockHTMLElement;
   createElementNS(namespace: string, tagName: string): MockHTMLElement;
   createTextNode(text: string): MockHTMLElement;
@@ -99,7 +99,7 @@ interface MockWindow {
   location: Location;
   history: History;
   navigator: Navigator;
-  
+
   addEventListener(type: string, listener: Function): void;
   removeEventListener(type: string, listener: Function): void;
   dispatchEvent(event: any): boolean;
@@ -109,14 +109,14 @@ interface MockWindow {
   matchMedia(query: string): MediaQueryList;
   scrollTo(x: number, y: number): void;
   scrollBy(x: number, y: number): void;
-  
+
   // Storage APIs
   localStorage: Storage;
   sessionStorage: Storage;
-  
+
   // Speech Synthesis
   speechSynthesis: SpeechSynthesis;
-  
+
   // Timer APIs
   setTimeout(callback: Function, delay: number, ...args: any[]): number;
   clearTimeout(id: number): void;
@@ -131,7 +131,7 @@ interface MockSpeechSynthesis {
   speaking: boolean;
   pending: boolean;
   paused: boolean;
-  
+
   speak(utterance: SpeechSynthesisUtterance): void;
   cancel(): void;
   pause(): void;
@@ -216,7 +216,7 @@ class MockCSSStyleDeclarationImpl implements MockCSSStyleDeclaration {
     return this.styles.size;
   }
 
-  setProperty(property: string, value: string, priority?: string): void {
+  setProperty(property: string, value: string, _priority?: string): void {
     this.styles.set(property, value);
     this.updateCSSText();
   }
@@ -244,7 +244,7 @@ class MockCSSStyleDeclarationImpl implements MockCSSStyleDeclaration {
   }
 
   // Allow direct property access
-  [property: string]: string | ((...args: any[]) => any);
+  [property: string]: any;
 }
 
 /**
@@ -303,7 +303,7 @@ class MockHTMLElementImpl implements MockHTMLElement {
 
   setAttribute(name: string, value: string): void {
     this.attributes[name] = value;
-    
+
     // Handle data attributes
     if (name.startsWith('data-')) {
       const dataKey = name.substring(5).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
@@ -321,7 +321,7 @@ class MockHTMLElementImpl implements MockHTMLElement {
 
   removeAttribute(name: string): void {
     delete this.attributes[name];
-    
+
     // Handle data attributes
     if (name.startsWith('data-')) {
       const dataKey = name.substring(5).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
@@ -333,7 +333,7 @@ class MockHTMLElementImpl implements MockHTMLElement {
     if (child.parentNode) {
       child.parentNode.removeChild(child);
     }
-    
+
     this.children.push(child);
     child.parentNode = this;
     child.parentElement = this;
@@ -375,15 +375,39 @@ class MockHTMLElementImpl implements MockHTMLElement {
       const element = this.findById(id);
       return element ? [element] : [];
     }
-    
+
     // Simple class selector support
     if (selector.startsWith('.')) {
       const className = selector.substring(1);
       return this.findAllByClassName(className);
     }
-    
+
+    // Attribute selector support
+    if (selector.startsWith('[') && selector.endsWith(']')) {
+      const attributeMatch = selector.match(/\[([\w-]+)="([^"]+)"\]/);
+      if (attributeMatch) {
+        const [, attrName, attrValue] = attributeMatch;
+        return this.findAllByAttribute(attrName, attrValue);
+      }
+    }
+
     // Simple tag selector support
     return this.findAllByTagName(selector);
+  }
+
+  private findAllByAttribute(name: string, value: string): MockHTMLElement[] {
+    const results: MockHTMLElement[] = [];
+
+    if (this.getAttribute(name) === value) {
+      results.push(this);
+    }
+
+    for (const child of this.children) {
+      const impl = child as unknown as MockHTMLElementImpl;
+      results.push(...impl.findAllByAttribute(name, value));
+    }
+
+    return results;
   }
 
   querySelector(selector: string): MockHTMLElement | null {
@@ -392,15 +416,36 @@ class MockHTMLElementImpl implements MockHTMLElement {
       const id = selector.substring(1);
       return this.findById(id);
     }
-    
+
     // Simple class selector support
     if (selector.startsWith('.')) {
       const className = selector.substring(1);
       return this.findByClassName(className);
     }
-    
+
+    // Attribute selector support
+    if (selector.startsWith('[') && selector.endsWith(']')) {
+      const attributeMatch = selector.match(/\[([\w-]+)="([^"]+)"\]/);
+      if (attributeMatch) {
+        const [, attrName, attrValue] = attributeMatch;
+        return this.findByAttribute(attrName, attrValue);
+      }
+    }
+
     // Simple tag selector support
     return this.findByTagName(selector);
+  }
+
+  private findByAttribute(name: string, value: string): MockHTMLElement | null {
+    if (this.getAttribute(name) === value) return this;
+
+    for (const child of this.children) {
+      const impl = child as unknown as MockHTMLElementImpl;
+      const found = impl.findByAttribute(name, value);
+      if (found) return found;
+    }
+
+    return null;
   }
 
   getElementsByTagName(tagName: string): MockHTMLElement[] {
@@ -437,14 +482,14 @@ class MockHTMLElementImpl implements MockHTMLElement {
     clone.textContent = this.textContent;
     clone.attributes = { ...this.attributes };
     clone.dataset = { ...this.dataset };
-    
+
     if (deep) {
       this.children.forEach(child => {
         const childClone = child.cloneNode(deep);
         clone.appendChild(childClone);
       });
     }
-    
+
     return clone;
   }
 
@@ -454,78 +499,136 @@ class MockHTMLElementImpl implements MockHTMLElement {
 
   contains(other: MockHTMLElement): boolean {
     if (this === other) return true;
-    
+
     for (const child of this.children) {
       if (child.contains(other)) {
         return true;
       }
     }
-    
+
     return false;
   }
 
-  private findById(id: string): MockHTMLElement | null {
+  public findById(id: string): MockHTMLElement | null {
     if (this.id === id) return this;
-    
+
     for (const child of this.children) {
-      const found = child.findById(id);
+      const impl = child as unknown as MockHTMLElementImpl;
+      const found = impl.findById(id);
       if (found) return found;
     }
-    
+
     return null;
   }
 
-  private findByClassName(className: string): MockHTMLElement | null {
+  public findByClassName(className: string): MockHTMLElement | null {
     if (this.className.includes(className)) return this;
-    
+
     for (const child of this.children) {
-      const found = child.findByClassName(className);
+      const impl = child as unknown as MockHTMLElementImpl;
+      const found = impl.findByClassName(className);
       if (found) return found;
     }
-    
+
     return null;
   }
 
-  private findByTagName(tagName: string): MockHTMLElement | null {
+  public findByTagName(tagName: string): MockHTMLElement | null {
     if (this.tagName === tagName.toUpperCase()) return this;
-    
+
     for (const child of this.children) {
-      const found = child.findByTagName(tagName);
+      const impl = child as unknown as MockHTMLElementImpl;
+      const found = impl.findByTagName(tagName);
       if (found) return found;
     }
-    
+
     return null;
   }
 
-  private findAllByClassName(className: string): MockHTMLElement[] {
+  public findAllByClassName(className: string): MockHTMLElement[] {
     const results: MockHTMLElement[] = [];
-    
+
     if (this.className.includes(className)) {
       results.push(this);
     }
-    
+
     for (const child of this.children) {
-      results.push(...child.findAllByClassName(className));
+      const impl = child as unknown as MockHTMLElementImpl;
+      results.push(...impl.findAllByClassName(className));
     }
-    
+
     return results;
   }
 
-  private findAllByTagName(tagName: string): MockHTMLElement[] {
+  public findAllByTagName(tagName: string): MockHTMLElement[] {
     const results: MockHTMLElement[] = [];
-    
+
     if (this.tagName === tagName.toUpperCase()) {
       results.push(this);
     }
-    
+
     for (const child of this.children) {
-      results.push(...child.findAllByTagName(tagName));
+      const impl = child as unknown as MockHTMLElementImpl;
+      results.push(...impl.findAllByTagName(tagName));
     }
-    
+
     return results;
   }
 
   private ownerDocument: MockDocument | null = null;
+}
+
+/**
+ * Mock Canvas Rendering Context 2D
+ */
+class MockCanvasRenderingContext2D {
+  canvas: MockHTMLElement;
+
+  constructor(canvas: MockHTMLElement) {
+    this.canvas = canvas;
+  }
+
+  fillRect(_x: number, _y: number, _w: number, _h: number): void { }
+  clearRect(_x: number, _y: number, _w: number, _h: number): void { }
+  getImageData(_sx: number, _sy: number, _sw: number, _sh: number): { data: number[], width: number, height: number } {
+    return { data: [], width: 0, height: 0 };
+  }
+  putImageData(_imagedata: any, _dx: number, _dy: number): void { }
+  createImageData(_sw: number, _sh: number): any { return { data: [] }; }
+  setTransform(_a: number, _b: number, _c: number, _d: number, _e: number, _f: number): void { }
+  drawImage(_image: any, _dx: number, _dy: number, _dw?: number, _dh?: number): void { }
+  save(): void { }
+  restore(): void { }
+  translate(_x: number, _y: number): void { }
+  rotate(_angle: number): void { }
+  scale(_x: number, _y: number): void { }
+  beginPath(): void { }
+  moveTo(_x: number, _y: number): void { }
+  lineTo(_x: number, _y: number): void { }
+  stroke(): void { }
+  fill(): void { }
+  measureText(_text: string): { width: number } { return { width: 0 }; }
+  fillText(_text: string, _x: number, _y: number, _maxWidth?: number): void { }
+  strokeText(_text: string, _x: number, _y: number, _maxWidth?: number): void { }
+}
+
+/**
+ * Mock HTML Canvas Element Implementation
+ */
+class MockHTMLCanvasElementImpl extends MockHTMLElementImpl {
+  width: number = 300;
+  height: number = 150;
+
+  getContext(contextId: string): any {
+    if (contextId === '2d') {
+      return new MockCanvasRenderingContext2D(this);
+    }
+    return null;
+  }
+
+  toDataURL(): string {
+    return 'data:image/png;base64,';
+  }
 }
 
 /**
@@ -545,16 +648,16 @@ class MockDocumentImpl implements MockDocument {
     this.documentElement = new MockHTMLElementImpl('HTML');
     this.head = new MockHTMLElementImpl('HEAD');
     this.body = new MockHTMLElementImpl('BODY');
-    
+
     // Set up basic document structure
     this.documentElement.appendChild(this.head);
     this.documentElement.appendChild(this.body);
-    
+
     // Set owner document for all elements
     (this.documentElement as any).ownerDocument = this;
     (this.head as any).ownerDocument = this;
     (this.body as any).ownerDocument = this;
-    
+
     // Mock location
     this.location = {
       href: 'http://localhost:3000',
@@ -566,14 +669,21 @@ class MockDocumentImpl implements MockDocument {
       pathname: '/',
       search: '',
       hash: '',
-      assign: () => {},
-      replace: () => {},
-      reload: () => {}
-    } as Location;
+      assign: () => { },
+      replace: () => { },
+      reload: () => { }
+    } as unknown as Location;
   }
 
   createElement(tagName: string): MockHTMLElement {
-    const element = new MockHTMLElementImpl(tagName);
+    let element: MockHTMLElementImpl;
+
+    if (tagName.toUpperCase() === 'CANVAS') {
+      element = new MockHTMLCanvasElementImpl(tagName);
+    } else {
+      element = new MockHTMLElementImpl(tagName);
+    }
+
     (element as any).ownerDocument = this;
     return element;
   }
@@ -600,15 +710,15 @@ class MockDocumentImpl implements MockDocument {
   }
 
   getElementById(id: string): MockHTMLElement | null {
-    return this.documentElement.findById(id);
+    return (this.documentElement as unknown as MockHTMLElementImpl).findById(id);
   }
 
   getElementsByTagName(tagName: string): MockHTMLElement[] {
-    return this.documentElement.findAllByTagName(tagName);
+    return (this.documentElement as unknown as MockHTMLElementImpl).findAllByTagName(tagName);
   }
 
   getElementsByClassName(className: string): MockHTMLElement[] {
-    return this.documentElement.findAllByClassName(className);
+    return (this.documentElement as unknown as MockHTMLElementImpl).findAllByClassName(className);
   }
 
   querySelector(selector: string): MockHTMLElement | null {
@@ -662,12 +772,12 @@ class MockSpeechSynthesisImpl implements MockSpeechSynthesis {
   speak(utterance: SpeechSynthesisUtterance): void {
     this.utterances.push(utterance);
     this.speaking = true;
-    
+
     // Simulate speech completion
     setTimeout(() => {
       this.speaking = false;
       if (utterance.onend) {
-        utterance.onend({ type: 'end' });
+        utterance.onend({ type: 'end' } as any);
       }
     }, 100);
   }
@@ -689,6 +799,11 @@ class MockSpeechSynthesisImpl implements MockSpeechSynthesis {
   getVoices(): SpeechSynthesisVoice[] {
     return [];
   }
+
+  onvoiceschanged: ((this: SpeechSynthesis, ev: Event) => any) | null = null;
+  addEventListener(_type: string, _listener: EventListenerOrEventListenerObject, _options?: boolean | AddEventListenerOptions): void { }
+  removeEventListener(_type: string, _listener: EventListenerOrEventListenerObject, _options?: boolean | EventListenerOptions): void { }
+  dispatchEvent(_event: Event): boolean { return true; }
 }
 
 /**
@@ -718,18 +833,18 @@ class MockWindowImpl implements MockWindow {
     this.localStorage = new MockStorage();
     this.sessionStorage = new MockStorage();
     this.speechSynthesis = new MockSpeechSynthesisImpl();
-    
+
     // Mock history
     this.history = {
       length: 1,
       state: null,
-      back: () => {},
-      forward: () => {},
-      go: () => {},
-      pushState: () => {},
-      replaceState: () => {}
-    } as History;
-    
+      back: () => { },
+      forward: () => { },
+      go: () => { },
+      pushState: () => { },
+      replaceState: () => { }
+    } as unknown as History;
+
     // Mock navigator
     this.navigator = {
       userAgent: 'Mock User Agent',
@@ -738,7 +853,7 @@ class MockWindowImpl implements MockWindow {
       platform: 'Mock Platform',
       cookieEnabled: true,
       onLine: true
-    } as Navigator;
+    } as unknown as Navigator;
   }
 
   addEventListener(type: string, listener: Function): void {
@@ -774,7 +889,7 @@ class MockWindowImpl implements MockWindow {
   requestAnimationFrame(callback: FrameRequestCallback): number {
     const id = ++this.animationFrameId;
     this.animationFrameCallbacks.set(id, callback);
-    
+
     // Simulate animation frame
     setTimeout(() => {
       if (this.animationFrameCallbacks.has(id)) {
@@ -782,7 +897,7 @@ class MockWindowImpl implements MockWindow {
         this.animationFrameCallbacks.delete(id);
       }
     }, 16);
-    
+
     return id;
   }
 
@@ -799,10 +914,10 @@ class MockWindowImpl implements MockWindow {
       matches: false,
       media: query,
       onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
+      addListener: () => { },
+      removeListener: () => { },
+      addEventListener: () => { },
+      removeEventListener: () => { },
       dispatchEvent: () => false
     };
   }
@@ -842,7 +957,7 @@ class MockWindowImpl implements MockWindow {
 export function setupDOMMock(): void {
   // Create global window instance
   const mockWindow = new MockWindowImpl();
-  
+
   // Set up global objects
   (globalThis as any).window = mockWindow;
   (globalThis as any).document = mockWindow.document;
@@ -852,7 +967,7 @@ export function setupDOMMock(): void {
   (globalThis as any).localStorage = mockWindow.localStorage;
   (globalThis as any).sessionStorage = mockWindow.sessionStorage;
   (globalThis as any).speechSynthesis = mockWindow.speechSynthesis;
-  
+
   // Also set up global document directly for compatibility
   (global as any).document = mockWindow.document;
   (global as any).window = mockWindow;
@@ -861,7 +976,7 @@ export function setupDOMMock(): void {
   (global as any).localStorage = mockWindow.localStorage;
   (global as any).sessionStorage = mockWindow.sessionStorage;
   (global as any).speechSynthesis = mockWindow.speechSynthesis;
-  
+
   // Set up global constructors
   (globalThis as any).HTMLElement = MockHTMLElementImpl;
   (globalThis as any).HTMLStyleElement = MockHTMLElementImpl;
@@ -874,31 +989,31 @@ export function setupDOMMock(): void {
   (globalThis as any).HTMLMetaElement = MockHTMLElementImpl;
   (globalThis as any).HTMLTitleElement = MockHTMLElementImpl;
   (globalThis as any).SpeechSynthesisUtterance = MockSpeechSynthesisUtterance;
-  
+
   // Set up performance API first (needed by requestAnimationFrame)
   (globalThis as any).performance = {
     now: () => Date.now(),
     timing: {
       navigationStart: Date.now()
     },
-    mark: () => {},
-    measure: () => {},
+    mark: () => { },
+    measure: () => { },
     getEntriesByName: () => [],
     getEntriesByType: () => []
   };
-  
+
   // Set up global functions
-  (globalThis as any).requestAnimationFrame = (callback: FrameRequestCallback) => 
+  (globalThis as any).requestAnimationFrame = (callback: FrameRequestCallback) =>
     mockWindow.requestAnimationFrame(callback);
-  (globalThis as any).cancelAnimationFrame = (id: number) => 
+  (globalThis as any).cancelAnimationFrame = (id: number) =>
     mockWindow.cancelAnimationFrame(id);
-  
+
   // Also set up on global for compatibility
-  (global as any).requestAnimationFrame = (callback: FrameRequestCallback) => 
+  (global as any).requestAnimationFrame = (callback: FrameRequestCallback) =>
     mockWindow.requestAnimationFrame(callback);
-  (global as any).cancelAnimationFrame = (id: number) => 
+  (global as any).cancelAnimationFrame = (id: number) =>
     mockWindow.cancelAnimationFrame(id);
-  
+
   // Set up console if not available
   if (!console.warn) {
     console.warn = console.log;
@@ -925,7 +1040,7 @@ export function cleanupDOMMock(): void {
     'HTMLTitleElement', 'SpeechSynthesisUtterance',
     'requestAnimationFrame', 'cancelAnimationFrame', 'performance'
   ];
-  
+
   properties.forEach(prop => {
     delete (globalThis as any)[prop];
   });
@@ -957,3 +1072,6 @@ export {
   MockStorage,
   MockCSSStyleDeclarationImpl
 };
+
+// Auto-run setup when module is imported
+setupDOMMock();

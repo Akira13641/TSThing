@@ -80,46 +80,46 @@ export interface CameraTransition {
 export class CameraSystem {
   /** World manager reference */
   private world: WorldManager | null = null;
-  
+
   /** Camera entity ID */
   private cameraEntityId: EntityId | null = null;
-  
+
   /** Current camera component */
   private camera: Camera | null = null;
-  
+
   /** Follow mode */
   private followMode: CameraFollowMode = CameraFollowMode.SMOOTH;
-  
+
   /** Follow speed for smooth transitions */
   private followSpeed: number = 5.0;
-  
+
   /** Lookahead distance */
   private lookaheadDistance: number = 100;
-  
+
   /** Camera boundaries */
   private bounds: CameraBounds = {
     minX: 0,
     maxX: 10000,
     minY: 0,
     maxY: 10000,
-    enabled: true
+    enabled: false
   };
-  
+
   /** Viewport dimensions */
   private viewport: { width: number; height: number } = { width: 1024, height: 768 };
-  
+
   /** Current shake effect */
   private shake: CameraShake | null = null;
-  
+
   /** Current transition */
   private transition: CameraTransition | null = null;
-  
+
   /** Dead zone size (camera won't move if target is within this zone) */
-  private deadZone: { width: number; height: number } = { width: 200, height: 150 };
-  
+  private deadZone: { width: number; height: number } = { width: 0, height: 0 };
+
   /** Previous target position for velocity calculation */
   private previousTargetPosition: { x: number; y: number } = { x: 0, y: 0 };
-  
+
   /** Target velocity for lookahead */
   private targetVelocity: { x: number; y: number } = { x: 0, y: 0 };
 
@@ -165,8 +165,9 @@ export class CameraSystem {
    * @param entityId - Entity ID to follow (null for static camera)
    */
   public setTarget(entityId: EntityId | null): void {
+    this.ensureCamera();
     if (!this.camera) return;
-    
+
     this.camera.targetEntityId = entityId;
     if (entityId !== null) {
       logger.debug(LogSource.CAMERA, `Camera now following entity ${entityId}`);
@@ -200,8 +201,9 @@ export class CameraSystem {
    * @param y - Y position
    */
   public setPosition(x: number, y: number): void {
+    this.ensureCamera();
     if (!this.camera) return;
-    
+
     this.camera.x = x;
     this.camera.y = y;
     this.applyBounds();
@@ -212,8 +214,9 @@ export class CameraSystem {
    * @param zoom - Zoom level (1.0 = native)
    */
   public setZoom(zoom: number): void {
+    this.ensureCamera();
     if (!this.camera) return;
-    
+
     this.camera.zoom = Math.max(0.1, Math.min(5.0, zoom));
     logger.debug(LogSource.CAMERA, `Camera zoom set to ${this.camera.zoom}`);
   }
@@ -224,7 +227,7 @@ export class CameraSystem {
    */
   public getPosition(): { x: number; y: number } {
     if (!this.camera) return { x: 0, y: 0 };
-    
+
     return { x: this.camera.x, y: this.camera.y };
   }
 
@@ -242,10 +245,10 @@ export class CameraSystem {
    */
   public getBounds(): Rectangle {
     if (!this.camera) return { x: 0, y: 0, width: 0, height: 0 };
-    
+
     const halfWidth = (this.viewport.width / this.camera.zoom) / 2;
     const halfHeight = (this.viewport.height / this.camera.zoom) / 2;
-    
+
     return {
       x: this.camera.x - halfWidth,
       y: this.camera.y - halfHeight,
@@ -262,10 +265,10 @@ export class CameraSystem {
    */
   public worldToScreen(worldX: number, worldY: number): { x: number; y: number } {
     if (!this.camera) return { x: 0, y: 0 };
-    
+
     const screenX = (worldX - this.camera.x) * this.camera.zoom + this.viewport.width / 2;
     const screenY = (worldY - this.camera.y) * this.camera.zoom + this.viewport.height / 2;
-    
+
     return { x: screenX, y: screenY };
   }
 
@@ -277,10 +280,10 @@ export class CameraSystem {
    */
   public screenToWorld(screenX: number, screenY: number): { x: number; y: number } {
     if (!this.camera) return { x: 0, y: 0 };
-    
+
     const worldX = (screenX - this.viewport.width / 2) / this.camera.zoom + this.camera.x;
     const worldY = (screenY - this.viewport.height / 2) / this.camera.zoom + this.camera.y;
-    
+
     return { x: worldX, y: worldY };
   }
 
@@ -294,15 +297,15 @@ export class CameraSystem {
   public isVisible(worldX: number, worldY: number, margin: number = 0): boolean {
     const screen = this.worldToScreen(worldX, worldY);
     if (!screen || !this.viewport || !this.camera) return false;
-    
+
     const viewport = this.viewport;
     const camera = this.camera;
     const extendedMargin = margin / camera.zoom;
-    
-    return screen.x >= -extendedMargin && 
-           screen.x <= viewport.width + extendedMargin &&
-           screen.y >= -extendedMargin && 
-           screen.y <= viewport.height + extendedMargin;
+
+    return screen.x >= -extendedMargin &&
+      screen.x <= viewport.width + extendedMargin &&
+      screen.y >= -extendedMargin &&
+      screen.y <= viewport.height + extendedMargin;
   }
 
   /**
@@ -319,7 +322,7 @@ export class CameraSystem {
       frequency,
       offset: { x: 0, y: 0 }
     };
-    
+
     logger.debug(LogSource.CAMERA, `Camera shake started: intensity=${intensity}, duration=${duration}s`);
   }
 
@@ -332,14 +335,14 @@ export class CameraSystem {
    * @param onComplete - Optional callback when transition completes
    */
   public startTransition(
-    targetX: number, 
-    targetY: number, 
+    targetX: number,
+    targetY: number,
     targetZoom: number = 1.0,
     duration: number = 1.0,
     onComplete?: () => void
   ): void {
     if (!this.camera) return;
-    
+
     this.transition = {
       targetPosition: { x: targetX, y: targetY },
       targetZoom,
@@ -349,7 +352,7 @@ export class CameraSystem {
       startZoom: this.camera.zoom,
       onComplete
     };
-    
+
     logger.debug(LogSource.CAMERA, `Camera transition started: to(${targetX},${targetY}), zoom=${targetZoom}, duration=${duration}s`);
   }
 
@@ -379,6 +382,23 @@ export class CameraSystem {
   }
 
   /**
+   * Ensures camera is initialized (lazy initialization)
+   */
+  private ensureCamera(): void {
+    if (this.camera) return;
+
+    // Initialize camera without world (standalone mode)
+    this.camera = {
+      x: this.viewport.width / 2,
+      y: this.viewport.height / 2,
+      zoom: 1.0,
+      targetEntityId: null
+    };
+
+    logger.debug(LogSource.CAMERA, 'Camera initialized in standalone mode');
+  }
+
+  /**
    * Initializes camera entity and component
    */
   private initializeCamera(): void {
@@ -386,17 +406,17 @@ export class CameraSystem {
 
     // Create camera entity
     this.cameraEntityId = this.world.createEntity(['Camera']);
-    
-    // Add camera component
+
+    // Add camera component - initialize at viewport center
     this.camera = {
       x: this.viewport.width / 2,
       y: this.viewport.height / 2,
       zoom: 1.0,
       targetEntityId: null
     };
-    
+
     this.world.addComponent(this.cameraEntityId, 'Camera', this.camera);
-    
+
     logger.info(LogSource.CAMERA, 'Camera entity initialized');
   }
 
@@ -421,7 +441,7 @@ export class CameraSystem {
     // Apply dead zone
     const dx = targetPosition.x - this.camera.x;
     const dy = targetPosition.y - this.camera.y;
-    
+
     if (Math.abs(dx) <= this.deadZone.width / 2 && Math.abs(dy) <= this.deadZone.height / 2) {
       // Target is within dead zone, don't move camera
       return;
@@ -444,7 +464,7 @@ export class CameraSystem {
         // Add lookahead based on velocity
         const lookaheadX = this.targetVelocity.x * this.lookaheadDistance / 100;
         const lookaheadY = this.targetVelocity.y * this.lookaheadDistance / 100;
-        
+
         const smoothFactor = 1 - Math.exp(-this.followSpeed * deltaTime);
         this.camera.x += (targetX + lookaheadX - this.camera.x) * smoothFactor;
         this.camera.y += (targetY + lookaheadY - this.camera.y) * smoothFactor;
@@ -453,10 +473,10 @@ export class CameraSystem {
       case CameraFollowMode.ELASTIC:
         // Spring physics
         const springConstant = this.followSpeed * 2;
-        
+
         const springForceX = (targetX - this.camera.x) * springConstant;
         const springForceY = (targetY - this.camera.y) * springConstant;
-        
+
         this.camera.x += springForceX * deltaTime;
         this.camera.y += springForceY * deltaTime;
         break;
@@ -471,7 +491,7 @@ export class CameraSystem {
     if (!this.shake) return;
 
     this.shake.timer -= deltaTime;
-    
+
     if (this.shake.timer <= 0) {
       this.shake = null;
       return;
@@ -480,7 +500,7 @@ export class CameraSystem {
     // Calculate shake offset
     const progress = 1 - (this.shake.timer / this.shake.duration);
     const currentIntensity = this.shake.intensity * (1 - progress);
-    
+
     const time = Date.now() / 1000;
     this.shake.offset.x = Math.sin(time * this.shake.frequency * Math.PI * 2) * currentIntensity;
     this.shake.offset.y = Math.cos(time * this.shake.frequency * Math.PI * 2.5) * currentIntensity;
@@ -494,33 +514,33 @@ export class CameraSystem {
     if (!this.transition || !this.camera) return;
 
     this.transition.timer -= deltaTime;
-    
+
     if (this.transition.timer <= 0) {
       // Transition complete
       this.camera.x = this.transition.targetPosition.x;
       this.camera.y = this.transition.targetPosition.y;
       this.camera.zoom = this.transition.targetZoom;
-      
+
       if (this.transition.onComplete) {
         this.transition.onComplete();
       }
-      
+
       this.transition = null;
       return;
     }
 
     // Calculate progress (ease-in-out)
     const progress = 1 - (this.transition.timer / this.transition.duration);
-    const easedProgress = progress < 0.5 
-      ? 2 * progress * progress 
+    const easedProgress = progress < 0.5
+      ? 2 * progress * progress
       : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
     // Interpolate position and zoom
-    this.camera.x = this.transition.startPosition.x + 
+    this.camera.x = this.transition.startPosition.x +
       (this.transition.targetPosition.x - this.transition.startPosition.x) * easedProgress;
-    this.camera.y = this.transition.startPosition.y + 
+    this.camera.y = this.transition.startPosition.y +
       (this.transition.targetPosition.y - this.transition.startPosition.y) * easedProgress;
-    this.camera.zoom = this.transition.startZoom + 
+    this.camera.zoom = this.transition.startZoom +
       (this.transition.targetZoom - this.transition.startZoom) * easedProgress;
   }
 
@@ -538,7 +558,7 @@ export class CameraSystem {
       this.bounds.minX + halfViewportWidth,
       Math.min(this.bounds.maxX - halfViewportWidth, this.camera.x)
     );
-    
+
     this.camera.y = Math.max(
       this.bounds.minY + halfViewportHeight,
       Math.min(this.bounds.maxY - halfViewportHeight, this.camera.y)
@@ -551,16 +571,16 @@ export class CameraSystem {
    */
   public getFinalPosition(): { x: number; y: number } {
     if (!this.camera) return { x: 0, y: 0 };
-    
+
     let x = this.camera.x;
     let y = this.camera.y;
-    
+
     // Apply shake offset
     if (this.shake) {
       x += this.shake.offset.x;
       y += this.shake.offset.y;
     }
-    
+
     return { x, y };
   }
 
@@ -568,16 +588,17 @@ export class CameraSystem {
    * Resets camera to default state
    */
   public reset(): void {
+    this.ensureCamera();
     if (!this.camera) return;
-    
+
     this.camera.x = this.viewport.width / 2;
     this.camera.y = this.viewport.height / 2;
     this.camera.zoom = 1.0;
     this.camera.targetEntityId = null;
-    
+
     this.shake = null;
     this.transition = null;
-    
+
     logger.debug(LogSource.CAMERA, 'Camera reset to default state');
   }
 }
