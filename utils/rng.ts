@@ -152,11 +152,13 @@ export function rollCritical(critChance: number): boolean {
 /**
  * Gets a random element with weighted probabilities
  * @param items - Array of items with weights
+ * @param rng - Optional RNG instance to use (defaults to globalRNG)
  * @returns Selected item
  */
-export function weightedRandom<T>(items: Array<{ item: T; weight: number }>): T {
+export function weightedRandom<T>(items: Array<{ item: T; weight: number }>, rng?: RNG): T {
+  const rngInstance = rng || globalRNG;
   const totalWeight = items.reduce((sum, { weight }) => sum + weight, 0);
-  let random = globalRNG.randomFloat(0, totalWeight);
+  let random = rngInstance.randomFloat(0, totalWeight);
   
   for (const entry of items) {
     random -= entry.weight;

@@ -320,6 +320,8 @@ runner.test('Simulated GameLoop - Performance timing', () => {
 // ============= GLOBAL LOGGER TESTS =============
 
 runner.test('GlobalLogger - Basic logging', () => {
+  // Reset logger to ensure clean state
+  GlobalLogger.resetInstance();
   const logger = GlobalLogger.getInstance();
   const originalConsoleLog = console.info;
   let logCallCount = 0;
@@ -364,6 +366,8 @@ runner.test('GlobalLogger - Configuration', () => {
 });
 
 runner.test('GlobalLogger - Log statistics', () => {
+  // Reset logger to ensure clean state
+  GlobalLogger.resetInstance();
   const logger = GlobalLogger.getInstance();
   
   // Clear existing logs
@@ -411,6 +415,8 @@ runner.test('Integration - World and Update Cycle', () => {
 });
 
 runner.test('Integration - Logger and World', () => {
+  // Reset logger to ensure clean state
+  GlobalLogger.resetInstance();
   const logger = GlobalLogger.getInstance();
   const world = new WorldManager();
   

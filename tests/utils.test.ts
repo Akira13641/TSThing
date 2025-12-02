@@ -166,18 +166,11 @@ runner.test('weightedRandom - Weighted selection', () => {
   // Use a fresh RNG instance for consistent test results
   const testRNG = new RNG(12345); // Fixed seed
   
-  // Override globalRNG temporarily for this test
-  const originalRandomFloat = globalRNG.randomFloat;
-  globalRNG.randomFloat = testRNG.randomFloat.bind(testRNG);
-  
-  try {
-    for (let i = 0; i < 10000; i++) {
-      const result = weightedRandom(items);
-      results[result.item as keyof typeof results]++;
-    }
-  } finally {
-    // Restore original method
-    globalRNG.randomFloat = originalRandomFloat;
+  for (let i = 0; i < 10000; i++) {
+    const result = weightedRandom(items, testRNG);
+    if (result === 'common') results.common++;
+    else if (result === 'uncommon') results.uncommon++;
+    else if (result === 'rare') results.rare++;
   }
   
   // Check that rare items appear less often than common items

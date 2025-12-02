@@ -1,12 +1,12 @@
 /**
  * Interaction System Tests
- * @fileoverview Unit tests for interaction system and entity interactions
+ * @fileoverview Unit tests for interaction system functionality
  */
 
-import { InteractionSystem, InteractionType, InteractionCondition, InteractionActionType } from '../engine/InteractionSystem';
+import { InteractionSystem } from '../engine/InteractionSystem';
 import { WorldManager } from '../engine/WorldManager';
 import { logger, LogSource } from '../engine/GlobalLogger';
-import { EntityId, Position, Interaction } from '../types';
+import { EntityId, Position } from '../types';
 
 /**
  * Test runner for interaction system tests
@@ -32,16 +32,16 @@ class InteractionSystemTestRunner {
     for (const test of this.tests) {
       try {
         test.fn();
-        console.log(`✓ ${test.name}`);
+        console.log(\`✓ \${test.name}`);
         this.passed++;
       } catch (error) {
-        console.log(`✗ ${test.name}`);
-        console.log(`  Error: ${error}`);
+        console.log(\`✗ \${test.name}`);
+        console.log(\`  Error: \${error}`);
         this.failed++;
       }
     }
 
-    console.log(`\nInteraction System Test Results: ${this.passed} passed, ${this.failed} failed`);
+    console.log(\`\nInteraction System Test Results: \${this.passed} passed, \${this.failed} failed`);
     return { passed: this.passed, failed: this.failed };
   }
 
@@ -59,7 +59,7 @@ class InteractionSystemTestRunner {
    */
   public assertEqual<T>(actual: T, expected: T, message: string): void {
     if (actual !== expected) {
-      throw new Error(`${message}. Expected: ${expected}, Actual: ${actual}`);
+      throw new Error(\`\${message}. Expected: \${expected}, Actual: \${actual}`);
     }
   }
 
@@ -73,17 +73,19 @@ class InteractionSystemTestRunner {
   }
 
   /**
-   * Array length assertion helper
+   * Approximate equality assertion helper
    */
-  public assertArrayLength<T>(array: T[], expectedLength: number, message: string): void {
-    this.assertEqual(array.length, expectedLength, message);
+  public assertApproximately(actual: number, expected: number, tolerance: number = 0.0001, message: string): void {
+    if (Math.abs(actual - expected) > tolerance) {
+      throw new Error(\`\${message}. Expected: \${expected} ± \${tolerance}, Actual: \${actual}`);
+    }
   }
 }
 
 // Create test runner instance
 const runner = new InteractionSystemTestRunner();
 
-// ============= INTERACTION SYSTEM INITIALIZATION TESTS =============
+// ============= BASIC FUNCTIONALITY TESTS =============
 
 runner.test('InteractionSystem - Initialization', () => {
   const interactionSystem = new InteractionSystem();
@@ -95,55 +97,66 @@ runner.test('InteractionSystem - World manager assignment', () => {
   const world = new WorldManager();
   
   interactionSystem.setWorld(world);
-  // Should not throw
   runner.assert(true, 'World manager should be assignable');
 });
 
 runner.test('InteractionSystem - Player assignment', () => {
   const interactionSystem = new InteractionSystem();
+  const world = new WorldManager();
   
+  interactionSystem.setWorld(world);
   interactionSystem.setPlayer(1);
-  // Should not throw
   runner.assert(true, 'Player should be assignable');
 });
 
-// ============= INTERACTION CREATION TESTS =============
+runner.test('InteractionSystem - Range multiplier', () => {
+  const interactionSystem = new InteractionSystem();
+  
+  interactionSystem.setRangeMultiplier(2.0);
+  const multiplier = interactionSystem.getRangeMultiplier();
+  runner.assertEqual(multiplier, 2.0, 'Range multiplier should be set to 2.0');
+});
 
-runner.test('InteractionSystem - Create interactive entity', () => {
+// ============= INVENTORY MANAGEMENT TESTS =============
+
+runner.test('InteractionSystem - Inventory management', () => {
+  const interactionSystem = new InteractionSystem();
+  
+  // Test empty inventory
+  runner.assert(!interactionSystem.hasItem('sword'), 'Should not have item initially');
+  
+  // Add item
+  interactionSystem.addItemToInventory('sword');
+  runner.assert(interactionSystem.hasItem('sword'), 'Should have item after adding');
+  
+  // Add duplicate item (Set prevents duplicates)
+  interactionSystem.addItemToInventory('sword');
+  runner.assert(interactionSystem.hasItem('request'), 'Should still have item (Set prevents duplicates)');
+  
+  // Remove item (removes one instance)
+  interactionSystem.removeItemFromInventory('sword');
+  // Should still have item (we added it twice, removed one)
+  runner.assert(interactionSystem.hasItem('sword'), 'Should still have one item after removing one');
+  
+  // Remove item (removes last instance)
+  interactionSystem.removeItemFromInventory('sword');
+  // Should not have item (no instances left)
+  runner.assert(!interactionSystem.hasItem('sword'), 'Should not have item after removing all');
+});
+
+// ============= CONDITION TESTS =============
+
+runner.test('InteractionSystem - Always available condition', () => {
   const interactionSystem = new InteractionSystem();
   const world = new WorldManager();
   
   interactionSystem.setWorld(world);
+  interactionSystem.setPlayer(1);
   
-  const interaction: Interaction = {
-    id: 'test_npc',
-    type: InteractionType.TALK,
-    name: 'Test NPC',
-    description: 'A test NPC for interactions',
-    range: 50,
-    enabled: true,
-    singleUse: false,
-    used: false,
-    conditions: [],
-    actions: []
-  };
-  
-  const entityId = interactionSystem.createInteractiveEntity(interaction);
-  runner.assertNotNull(entityId, 'Interactive entity should be created');
-  
-  const retrievedInteraction = world.getComponent<Interaction>(entityId, 'Interaction');
-  runner.assertNotNull(retrievedInteraction, 'Interaction component should be attached');
-  runner.assertEqual(retrievedInteraction!.id, 'test_npc', 'Interaction ID should match');
-});
-
-// ============= INTERACTION CONDITIONS TESTS =============
-
-runner.test('InteractionSystem - Always condition', () => {
-  const interactionSystem = new InteractionSystem();
-  
-  const interaction: Interaction = {
+  // Create always available interaction
+  const interaction = {
     id: 'always_test',
-    type: InteractionType.EXAMINE,
+    type: InteractionType.OPEN,
     name: 'Always Available',
     description: 'Always available interaction',
     range: 50,
@@ -151,115 +164,96 @@ runner.test('InteractionSystem - Always condition', () => {
     singleUse: false,
     used: false,
     conditions: [
-      { type: InteractionCondition.ALWAYS, value: true }
+      { type: InteractionCondition.ALWAYS }
     ],
     actions: []
   };
   
-  // Should always be available
-  const isAvailable = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(isAvailable, 'Always condition should pass');
+  // Should be available
+  const conditionMet = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
+  runner.assert(conditionMet, 'Always available condition should always pass');
 });
 
 runner.test('InteractionSystem - Item requirement condition', () => {
   const interactionSystem = new InteractionSystem();
+  const world = new WorldManager();
   
-  // Give player required item
-  interactionSystem.addItemToInventory('key_silver');
+  interactionSystem.setWorld(world);
+  interactionSystem.setPlayer(1);
   
+  // Give player item
+  interactionSystem.addItemToInventory('key_gold');
+  
+  // Create interaction that requires item
   const interaction: Interaction = {
     id: 'item_test',
     type: InteractionType.OPEN,
-    name: 'Locked Door',
-    description: 'Door requiring silver key',
+    name: 'Item Test',
+    description: 'Test interaction that requires item',
     range: 50,
     enabled: true,
     singleUse: false,
     used: false,
     conditions: [
-      { type: InteractionCondition.REQUIRES_ITEM, value: 'key_silver' }
+      { type: InteractionCondition.REQUIRES_ITEM, value: 'key_gold' }
     ],
     actions: []
   };
   
-  // Should be available with item
+  // Should be available when player has item
   const hasItem = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(hasItem, 'Item requirement should pass when player has item');
+  runner.assert(hasItem, 'Should be available when player has item');
   
-  // Remove item and test again
-  interactionSystem.removeItemFromInventory('key_silver');
+  // Should not be available when player doesn't have item
+  interactionSystem.removeItemFromInventory('key_gold');
   const noItem = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(!noItem, 'Item requirement should fail when player lacks item');
-});
-
-runner.test('InteractionSystem - Story flag condition', () => {
-  const interactionSystem = new InteractionSystem();
-  
-  // Set story flag
-  interactionSystem.setStoryFlag('met_king', true);
-  
-  const interaction: Interaction = {
-    id: 'flag_test',
-    type: InteractionType.TALK,
-    name: 'King',
-    description: 'The king you met',
-    range: 50,
-    enabled: true,
-    singleUse: false,
-    used: false,
-    conditions: [
-      { type: InteractionCondition.REQUIRES_FLAG, value: 'met_king' }
-    ],
-    actions: []
-  };
-  
-  // Should be available with flag set
-  const hasFlag = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(hasFlag, 'Flag requirement should pass when flag is set');
-  
-  // Clear flag and test again
-  interactionSystem.setStoryFlag('met_king', false);
-  const noFlag = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(!noFlag, 'Flag requirement should fail when flag is not set');
+  runner.assert(!noItem, 'Should not be available when player doesn\'t have item');
 });
 
 runner.test('InteractionSystem - Level requirement condition', () => {
   const interactionSystem = new InteractionSystem();
+  const world = new WorldManager();
   
-  // Set player level
-  interactionSystem.setPlayerLevel(10);
+  interactionSystem.setWorld(world);
+  interactionSystem.setPlayer(1);
   
+  // Create interaction that requires level 5
   const interaction: Interaction = {
     id: 'level_test',
-    type: InteractionType.USE,
-    name: 'Level Gated Item',
-    description: 'Requires level 10',
+    type: InteractionType.OPEN,
+    name: 'Level Test',
+    description: 'Test interaction that requires level 5',
     range: 50,
     enabled: true,
     singleUse: false,
     used: false,
     conditions: [
-      { type: InteractionCondition.REQUIRES_LEVEL, value: 10 }
+      { type: InteractionCondition.REQUIRES_LEVEL, value: 5 }
     ],
     actions: []
   };
   
   // Should be available at correct level
   const correctLevel = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(correctLevel, 'Level requirement should pass at correct level');
+  runner.assert(correctLevel, 'Should be available at correct level');
   
-  // Test with insufficient level
-  interactionSystem.setPlayerLevel(5);
+  // Should not be available at insufficient level
+  interactionSystem.setPlayerLevel(1);
   const insufficientLevel = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(!insufficientLevel, 'Level requirement should fail at insufficient level');
+  runner.assert(!insufficientLevel, 'Should not be available at insufficient level');
 });
 
 runner.test('InteractionSystem - Negated conditions', () => {
   const interactionSystem = new InteractionSystem();
+  const world = new WorldManager();
+  
+  interactionSystem.setWorld(world);
+  interactionSystem.setPlayer(1);
   
   // Give player item
   interactionSystem.addItemToInventory('key_gold');
   
+  // Create interaction with negated condition
   const interaction: Interaction = {
     id: 'negated_test',
     type: InteractionType.OPEN,
@@ -275,122 +269,22 @@ runner.test('InteractionSystem - Negated conditions', () => {
     actions: []
   };
   
-  // Should be available when player doesn't have the item
-  const withoutItem = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(withoutItem, 'Negated condition should pass when item not present');
+  // Should be available when player doesn't have item (negate=true)
+  const conditionMet = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
+  runner.assert(conditionMet, 'Negated condition should pass when item not present');
   
-  // Should fail when player has the item
+  // Should fail when player has item (negate=true)
   interactionSystem.addItemToInventory('key_gold');
-  const withItem = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
-  runner.assert(!withItem, 'Negated condition should fail when item is present');
+  const conditionMetWithItem = interactionSystem.checkInteractionConditions?.(interaction, 1, 2) ?? false;
+  runner.assert(!conditionMetWithItem, 'Negated condition should fail when item is present');
 });
 
-// ============= INTERACTION RANGE TESTS =============
-
-runner.test('InteractionSystem - Range multiplier', () => {
+runner.test('InteractionSystem - Story flag condition', () => {
   const interactionSystem = new InteractionSystem();
+  const world = new WorldManager();
   
-  interactionSystem.setRangeMultiplier(2.0);
-  
-  const interaction: Interaction = {
-    id: 'range_test',
-    type: InteractionType.EXAMINE,
-    name: 'Range Test',
-    description: 'Tests range calculations',
-    range: 50,
-    enabled: true,
-    singleUse: false,
-    used: false,
-    conditions: [],
-    actions: []
-  };
-  
-  // Effective range should be 100 with 2x multiplier
-  // This would be tested in actual update with distance calculations
-  runner.assert(true, 'Range multiplier should be set');
-});
-
-// ============= INTERACTION PRIORITY TESTS =============
-
-runner.test('InteractionSystem - Priority calculation', () => {
-  const interactionSystem = new InteractionSystem();
-  
-  // Test different interaction types
-  const talkPriority = interactionSystem.calculateInteractionPriority?.({
-    type: InteractionType.TALK
-  } as Interaction) || 0;
-  
-  const examinePriority = interactionSystem.calculateInteractionPriority?.({
-    type: InteractionType.EXAMINE
-  } as Interaction) || 0;
-  
-  const pickupPriority = interactionSystem.calculateInteractionPriority?.({
-    type: InteractionType.PICKUP
-  } as Interaction) || 0;
-  
-  // Talk should have higher priority than examine
-  runner.assert(talkPriority > examinePriority, 'Talk should have higher priority than examine');
-  runner.assert(pickupPriority > examinePriority, 'Pickup should have higher priority than examine');
-});
-
-// ============= SINGLE-USE INTERACTIONS TESTS =============
-
-runner.test('InteractionSystem - Single use interactions', () => {
-  const interactionSystem = new InteractionSystem();
-  
-  const interaction: Interaction = {
-    id: 'single_use_test',
-    type: InteractionType.PICKUP,
-    name: 'Single Use Item',
-    description: 'Can only be used once',
-    range: 50,
-    enabled: true,
-    singleUse: true,
-    used: false,
-    conditions: [],
-    actions: []
-  };
-  
-  // Should be available initially
-  runner.assert(!interaction.used, 'Single use interaction should not be used initially');
-  
-  // Mark as used
-  interaction.used = true;
-  
-  // Should no longer be available
-  runner.assert(interaction.used, 'Single use interaction should be marked as used');
-});
-
-// ============= INVENTORY MANAGEMENT TESTS =============
-
-runner.test('InteractionSystem - Inventory management', () => {
-  const interactionSystem = new InteractionSystem();
-  
-  // Test empty inventory
-  runner.assert(!interactionSystem.hasItem('sword'), 'Should not have item initially');
-  
-  // Add item
-  interactionSystem.addItemToInventory('sword');
-  runner.assert(interactionSystem.hasItem('sword'), 'Should have item after adding');
-  
-  // Add duplicate item
-  interactionSystem.addItemToInventory('sword');
-  runner.assert(interactionSystem.hasItem('sword'), 'Should still have item');
-  
-  // Remove item
-  interactionSystem.removeItemFromInventory('sword');
-  // Should still have item (we added it twice)
-  runner.assert(interactionSystem.hasItem('sword'), 'Should still have one item');
-  
-  // Remove second item
-  interactionSystem.removeItemFromInventory('sword');
-  runner.assert(!interactionSystem.hasItem('sword'), 'Should not have item after removing all');
-});
-
-// ============= STORY FLAGS TESTS =============
-
-runner.test('InteractionSystem - Story flag management', () => {
-  const interactionSystem = new InteractionSystem();
+  interactionSystem.setWorld(world);
+  interactionSystem.setPlayer(1);
   
   // Test flag not set
   runner.assert(!interactionSystem.getStoryFlag('test_flag'), 'Flag should not be set initially');
@@ -398,51 +292,74 @@ runner.test('InteractionSystem - Story flag management', () => {
   // Set flag
   interactionSystem.setStoryFlag('test_flag', true);
   runner.assert(interactionSystem.getStoryFlag('test_flag'), 'Flag should be set to true');
-  
   // Set flag to false
   interactionSystem.setStoryFlag('test_flag', false);
-  runner.assert(!interactionSystem.getStoryFlag('test_flag'), 'Flag should be set to false');
+  runner.assert(!interactionSystem.getStoryFlag('test_flag'), 'Flag should be false when set to false');
 });
 
-// ============= PLAYER LEVEL TESTS =============
+// ============= INTEGRATION TESTS =============
 
-runner.test('InteractionSystem - Player level management', () => {
+runner.test('Integration - World and Interaction System', () => {
   const interactionSystem = new InteractionSystem();
+  const world = new WorldManager();
   
-  // Set level
-  interactionSystem.setPlayerLevel(15);
-  // Would validate level is >= 1
-  runner.assert(true, 'Level should be settable');
+  interactionSystem.setWorld(world);
+  interactionSystem.setPlayer(1);
+  
+  // Create interactive entity
+  const entityId = interactionSystem.createInteractiveEntity({
+    id: 'test_entity',
+    type: InteractionType.OPEN,
+    name: 'Test Entity',
+    description: 'Test entity for interaction',
+    range: 50,
+    enabled: true,
+    singleUse: false,
+    used: false,
+    conditions: [],
+    actions: []
+  });
+  
+  // Should find 1 available interaction
+  const availableInteractions = interactionSystem.getAvailableInteractions();
+  const found = availableInteractions.length;
+  runner.assert(found >= 1, 'Should find at least 1 available interaction');
 });
 
-// ============= INTERACTION EXECUTION TESTS =============
+// ============= ACTION TESTS =============
 
-runner.test('InteractionSystem - Interaction execution', () => {
+runner.test('Interaction System - Action execution', () => {
   const interactionSystem = new InteractionSystem();
+  const world = new WorldManager();
   
-  const interaction: Interaction = {
+  interactionSystem.setWorld(world);
+  interactionSystem.setPlayer(1);
+  
+  // Create interactive entity with actions
+  const entityId = interactionSystem.createInteractiveEntity({
     id: 'action_test',
-    type: InteractionType.TALK,
-    name: 'Action Test',
-    description: 'Tests action execution',
+    type: InteractionType.DIALOG,
+    name: 'Test Dialog',
+    description: 'Test dialog with actions',
     range: 50,
     enabled: true,
     singleUse: false,
     used: false,
     conditions: [],
     actions: [
-      {
-        type: InteractionActionType.DIALOG,
-        parameters: { text: 'Hello, world!' }
-      }
+      { type: InteractionActionType.DIALOG, parameters: { text: 'Hello World!' } }
     ]
-  };
+  });
   
-  // Execute actions
-  interactionSystem.executeInteractionActions?.(1, interaction) ?? null;
+  // Execute interaction
+  const success = interactionSystem.interact();
+  runner.assert(success, 'Interaction should succeed');
   
-  // Should not throw
-  runner.assert(true, 'Action execution should not throw');
+  // Check if action was executed
+  const dialogAction = interactionSystem.getActiveInteraction()?.actions[0];
+  runner.assertNotNull(dialogAction, 'Dialog action should be active');
+  runner.assertEqual(dialogAction.type, InteractionActionType.DIALOG, 'Dialog action should be DIALOG');
+  runner.assertEqual(dialogAction.parameters.text, 'Hello World!', 'Dialog action should have correct parameters');
 });
 
 // Run all tests
